@@ -120,7 +120,8 @@ var TG=["Gigante","Slalom","Super G","Gran Gigante","Piedi Veloci","Flipper","Gi
 var LOC=["Colomion/Melezet","Jafferau","Via Lattea","Monginevro","Altro"];
 var METEO=["☀️ Sole","⛅ Nuvoloso","☁️ Coperto","🌫️ Nebbia","🌨️ Nevica","💨 Vento","🌧️ Pioggia"];
 var NEVE=["Compatta","Ghiacciata","Primaverile","Bagnata","Morbida"];
-var CAT0=["Super Baby","Baby Pro","Baby Race","Cuccioli Pro","Cuccioli Race","Ragazzi Pro","Ragazzi Race","Allievi Pro","Allievi Race","Giovani"];
+var CAT0=["Super Baby","Baby Pro","Baby Race","Cuccioli Pro","Cuccioli Race","Ragazzi Pro","Ragazzi Race","Allievi Pro","Allievi Race","Children Race","Giovani"];
+var CHILD=["Ragazzi Race","Allievi Race"];function inC(c,x){return x==c||(c=="Children Race"&&CHILD.indexOf(x)>=0)}function sesIn(sc,c){return sc==c||(sc=="Children Race"&&CHILD.indexOf(c)>=0)}
 var S={ses:[],ath:[]},view="cal",sel=iso(new Date()),cur=new Date(),F=null,MESI=["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
 var THEMES=["dark","light","green"];
 function setTheme(t){try{document.documentElement.setAttribute("data-theme",t)}catch(e){}try{localStorage.setItem("lt_theme",t)}catch(e){}}
@@ -157,9 +158,9 @@ function chg(a,k,l,opts,multi,d){var v=d[k];return '<label class="l">'+l+'</labe
 function ck(a,k,t,v){return '<label class="pres"><input type="checkbox" data-ck="'+k+'" data-a="'+a+'"'+(v?" checked":"")+'><span>'+t+'</span></label>'}
 function CF(a,k,d,acc){var c=d[k];return '<div class="mu" style="padding:2px 4px 8px">'+(c?'📎 '+esc(c.name)+' <button type="button" class="sec dg" data-cfr="'+esc(a)+'" data-cfk="'+k+'">✕</button>'+(/^image\//.test(c.type||"")?'<br><img src="'+c.data+'" style="max-width:100%;margin-top:6px;border-radius:8px">':""):'<input type="file" data-cf="'+esc(a)+'" data-cfk="'+k+'"'+(acc?' accept="'+acc+'"':"")+'>'+(F&&F.cerr==k+a?'<div style="color:var(--dg)">File troppo grande (max 1 MB)</div>':""))+'</div>'}
 var RO_CAT={"Super Baby":["Gigante"],"Baby Pro":["Gigante"],"Cuccioli Pro":["Gigante"],"Baby Race":["Slalom","Gigante","Gigante gara"],"Ragazzi Pro":["Slalom","Gigante"],"Allievi Pro":["Slalom","Gigante"],"Giovani":["Slalom","Gigante","Sci da archi"]};
-function roFor(c){return RO_CAT[c]||RO}
+function roFor(c){if(c=="Children Race")c="Ragazzi Race";return RO_CAT[c]||RO}
 function rifView(){if(!REG.cat)return '<div class="card mu" style="margin-top:12px">Seleziona una categoria per vedere gli atleti.</div>';
-var ro=roFor(REG.cat),gt='grid-template-columns:minmax(0,1fr) repeat('+ro.length+',46px)',l=S.ath.filter(function(a){return a.cat==REG.cat}).sort(function(a,b){return a.nome<b.nome?-1:1});
+var ro=roFor(REG.cat),gt='grid-template-columns:minmax(0,1fr) repeat('+ro.length+',46px)',l=S.ath.filter(function(a){return inC(REG.cat,a.cat)}).sort(function(a,b){return a.nome<b.nome?-1:1});
 if(!l.length)return '<div class="card mu" style="margin-top:12px">Nessun atleta in '+esc(REG.cat)+'. Aggiungili dalla scheda Atleti.</div>';
 return '<div class="card" style="margin-top:12px"><div class="rs mu" style="'+gt+';font-size:10px;line-height:1.1;text-align:center;border:0"><span></span>'+ro.map(function(x){return '<span>'+x+'</span>'}).join("")+'</div>'+l.map(function(a){var q=S.rif[a.id]||{o:[]};return '<div class="rs" style="'+gt+'"><span class="nm">'+esc(a.nome)+(q.d?'<small class="mu"> · '+q.d.slice(8)+'/'+q.d.slice(5,7)+'</small>':"")+'</span>'+ro.map(function(x){var on=q.o.indexOf(x)>=0;return '<button type="button" class="sq'+(on?" on":"")+'" data-ra="'+a.id+'" data-x="'+x+'">'+(on?"✓":"")+'</button>'}).join("")+'</div>'}).join("")+'<div class="mu" style="margin-top:6px;font-size:12px">Data accanto al nome = ultimo aggiornamento</div></div>'}
 var GF=null;
@@ -169,7 +170,7 @@ function gch(k,arr){return arr.map(function(x){return '<button type="button" cla
 function gform(){var g=GF;return '<div class="card"><b>'+(S.gare.some(function(x){return x.id==g.id})?"Modifica gara":"Nuova gara")+' · '+esc(REG.cat)+'</b><label class="l">Data</label><input type="date" id="gd" value="'+g.data+'"><label class="l">Nome gara (facoltativo)</label><input id="gn" value="'+esc(g.nome)+'"><label class="l">Località</label><div>'+gch("loc",SUB.Gare[1])+'</div>'+(g.loc=="Altro"?'<input id="gx" placeholder="Scrivi la località" value="'+esc(g.locx)+'">':"")+'<label class="l">Tipo di gara</label><div>'+gch("tipo",TG)+'</div><label class="l">Note</label><textarea id="gnote" rows="2">'+esc(g.note)+'</textarea><div class="row" style="margin-top:12px"><button class="pri" id="gsave" style="flex:1">Salva</button><button class="sec" id="gcancel">Annulla</button></div></div>'}
 function gsync(){if(GF&&$("gd")){GF.data=$("gd").value;GF.nome=$("gn").value;GF.note=$("gnote").value;if($("gx"))GF.locx=$("gx").value}}
 function gareView(){if(!REG.cat)return '<div class="card mu" style="margin-top:12px">Seleziona una categoria per vedere il calendario gare.</div>';
-var td=iso(new Date()),l=S.gare.filter(function(g){return g.cat==REG.cat}),up=l.filter(function(g){return g.data>=td}).sort(function(a,b){return a.data<b.data?-1:1}),pa=l.filter(function(g){return g.data<td}).sort(function(a,b){return a.data<b.data?1:-1});
+var td=iso(new Date()),l=S.gare.filter(function(g){return sesIn(g.cat,REG.cat)}),up=l.filter(function(g){return g.data>=td}).sort(function(a,b){return a.data<b.data?-1:1}),pa=l.filter(function(g){return g.data<td}).sort(function(a,b){return a.data<b.data?1:-1});
 var h='<div style="margin-top:12px"><button type="button" class="pri" id="gnew">＋ Aggiungi gara</button></div>';if(GF)h+=gform();
 if(up.length)h+='<h3 style="margin:14px 2px 0">Prossime gare</h3>'+up.map(gc).join("");
 if(pa.length)h+='<h3 style="margin:14px 2px 0">Passate</h3>'+pa.map(gc).join("");
@@ -196,7 +197,7 @@ try{claude.use("downloads").then(function(x){DL=x;if(view=="crono")render()}).ca
 function pt(x){x=String(x||"").trim().replace(",",".");if(!x)return NaN;var m=/^(\d+):(\d+(?:\.\d+)?)$/.exec(x),v=m?(+m[1])*60+ +m[2]:Number(x);return isFinite(v)&&v>0?v:NaN}
 function ft(v){if(!(v>=0))return "-";if(v>=60){var m=Math.floor(v/60),r=v-m*60;return m+":"+(r<10?"0":"")+r.toFixed(2)}return v.toFixed(2)}
 function rank(mode){var c=S.crono[CRS.date+"|"+REG.cat]||{a:{}},L=[];
-S.ath.filter(function(a){return a.cat==REG.cat}).forEach(function(a){var q=c.a[a.id];if(!q||!q.p)return;var ts=q.t.map(pt),v=ts.filter(function(x){return x>0});if(!v.length)return;L.push({nome:a.nome,ts:ts,n:v.length,best:Math.min.apply(null,v),tot:v.reduce(function(x,y){return x+y},0)})});
+S.ath.filter(function(a){return inC(REG.cat,a.cat)}).forEach(function(a){var q=c.a[a.id];if(!q||!q.p)return;var ts=q.t.map(pt),v=ts.filter(function(x){return x>0});if(!v.length)return;L.push({nome:a.nome,ts:ts,n:v.length,best:Math.min.apply(null,v),tot:v.reduce(function(x,y){return x+y},0)})});
 var mx=L.reduce(function(m,x){return Math.max(m,x.n)},0),R;
 if(mode=="best"){L.sort(function(a,b){return a.best-b.best});R=L.map(function(x){x.val=x.best;x.inc=false;return x})}
 else{L.forEach(function(x){x.inc=x.n<mx;x.val=x.tot});L.sort(function(a,b){return a.inc!=b.inc?(a.inc?1:-1):(a.inc&&a.n!=b.n?b.n-a.n:a.val-b.val)});R=L}
@@ -224,7 +225,7 @@ function CRB(f){var c=S.crono[f.data+"|"+f.cat],has=c&&Object.keys(c.a).some(fun
 return has?'<button type="button" class="sec" id="gocr" style="margin:4px 0 8px">📊 Vedi dati crono ('+f.data.split("-").reverse().join("/")+')</button>':'<div class="mu" style="font-size:13px;padding:2px 4px 8px">Nessun dato crono per questa data e categoria.</div>'}
 function crView(){var h=(F&&RET?'<div style="margin-bottom:8px"><button type="button" class="pri" id="retf" style="width:100%">↩ Torna alla sessione</button></div>':"")+'<label class="l">Data</label><input type="date" id="cd" data-cd="1" value="'+CRS.date+'">'+catSel(true);
 if(!REG.cat)return h+'<div class="card mu" style="margin-top:12px">Seleziona una categoria per vedere gli atleti.</div>';
-var l=S.ath.filter(function(a){return a.cat==REG.cat}).sort(function(a,b){return a.nome<b.nome?-1:1});
+var l=S.ath.filter(function(a){return inC(REG.cat,a.cat)}).sort(function(a,b){return a.nome<b.nome?-1:1});
 if(!l.length)return h+'<div class="card mu" style="margin-top:12px">Nessun atleta in '+esc(REG.cat)+'. Aggiungili da Registro › Atleti.</div>';
 var c=S.crono[CRS.date+"|"+REG.cat]||{a:{}},np=l.filter(function(a){return c.a[a.id]&&c.a[a.id].p}).length;
 h+='<div class="row sp" style="margin-top:12px"><b>Presenti: '+np+'/'+l.length+'</b><button class="sec" id="cpall">✔ Tutti presenti</button></div><div class="card"><div class="crr mu" style="font-size:11px;text-align:center;border:0"><span></span><span style="text-align:left">Atleta</span><span>1</span><span>2</span><span>3</span><span>4</span></div>';
@@ -241,7 +242,7 @@ if(a=="Pali"||a=="Campo libero"||a=="Snow park"||a=="Gare")h+=ck(a,"video","Vide
 if(a=="Atletica")h+=ck(a,"test","Test",d.test)+(d.test?'<label class="l">Allegato test (JPEG o PDF)</label>'+CF(a,"tfile",d,"image/jpeg,application/pdf"):"");
 if(a=="Gare")h+='<label class="l">Classifica (JPEG o PDF)</label>'+CF(a,"rfile",d,"image/jpeg,application/pdf");
 return h+'<label class="l">Note Allenatore / focus tecnico</label><textarea data-f="'+esc(a)+'" rows="2" placeholder="Note dell\'allenatore / focus tecnico">'+esc(d.focus||"")+'</textarea></div>'}).join("")}
-function card(s){var n=s.presenti.length,t=S.ath.filter(function(a){return a.cat==s.cat}).length;
+function card(s){var n=s.presenti.length,t=S.ath.filter(function(a){return inC(s.cat,a.cat)}).length;
 return '<div class="card" data-e="'+s.id+'"><div class="row sp"><b>'+esc(s.cat)+'</b><span class="tag '+(isProg(s)?"p":"")+'">'+(isProg(s)?"Programmata":"Svolta")+'</span></div><div>'+esc(lab(s)||"—")+'</div>'+(foc(s)?'<div class="mu">🎯 '+esc(foc(s))+'</div>':"")+(fl(s)?'<div class="mu">'+esc(fl(s))+'</div>':"")+'<div class="mu">'+fd(s.data)+(ll(s)?' · 📍 '+esc(ll(s)):"")+' · Presenti '+n+(t?"/"+t:"")+(cd(s)?' · '+esc(cd(s)):"")+'</div>'+(s.note?'<div class="mu">📝 '+esc(s.note)+'</div>':"")+'</div>'}
 var REG={mode:"list",cat:"",ath:""};
 var PAL=["#1e6b43","#6fc48f","#10241a","#a7cfb0","#4a5d50","#2f8f5b","#d3e3d0","#8a9b8e","#e8751a","#f3b17a"];
@@ -252,8 +253,8 @@ svg+='</g><text x="60" y="65" text-anchor="middle" font-size="17" font-weight="7
 return '<div class="card"><b>'+esc(t)+'</b><div class="row" style="align-items:flex-start;margin-top:8px;gap:12px">'+svg+'<div style="flex:1;min-width:0">'+lg+'</div></div></div>'}
 function catSel(req){return '<label class="l">Categoria</label><select data-rf="cat"><option value="">'+(req?"Seleziona categoria…":"Tutte le categorie")+'</option>'+cats().map(function(c){return '<option'+(REG.cat==c?" selected":"")+'>'+esc(c)+'</option>'}).join("")+'</select>'}
 function regCtl(){var M=REG.mode,h='<div style="margin-top:6px">'+[["list","📋 Elenco attività"],["ana","📊 Analisi"],["ath","👥 Atleti"],["gare","🏁 Calendario gare"],["bk","💾 Backup"]].map(function(x){return '<button type="button" class="chip'+(M==x[0]?" on":"")+'" data-rm="'+x[0]+'">'+x[1]+'</button>'}).join("")+'</div>'+(M=="ath"||M=="bk"?"":catSel(M=="gare"));
-if(M=="ana"&&REG.cat)h+='<label class="l">Atleta</label><select data-rf="ath"><option value="">Tutti gli atleti</option>'+S.ath.filter(function(a){return a.cat==REG.cat}).sort(function(a,b){return a.nome<b.nome?-1:1}).map(function(a){return '<option value="'+a.id+'"'+(REG.ath==a.id?" selected":"")+'>'+esc(a.nome)+'</option>'}).join("")+'</select>';return h}
-function ana(){var td=iso(new Date()),ses=S.ses.filter(function(s){return s.data<=td&&(!REG.cat||s.cat==REG.cat)}),at=REG.ath?S.ath.find(function(a){return a.id==REG.ath}):null,base=at?ses.filter(function(s){return s.presenti.indexOf(at.id)>=0}):ses;
+if(M=="ana"&&REG.cat)h+='<label class="l">Atleta</label><select data-rf="ath"><option value="">Tutti gli atleti</option>'+S.ath.filter(function(a){return inC(REG.cat,a.cat)}).sort(function(a,b){return a.nome<b.nome?-1:1}).map(function(a){return '<option value="'+a.id+'"'+(REG.ath==a.id?" selected":"")+'>'+esc(a.nome)+'</option>'}).join("")+'</select>';return h}
+function ana(){var td=iso(new Date()),ses=S.ses.filter(function(s){return s.data<=td&&(!REG.cat||sesIn(s.cat,REG.cat))}),at=REG.ath?S.ath.find(function(a){return a.id==REG.ath}):null,base=at?ses.filter(function(s){return s.presenti.indexOf(at.id)>=0}):ses;
 var h='<div class="card" style="margin-top:12px"><b>'+(at?esc(at.nome):(REG.cat?esc(REG.cat):"Tutte le categorie"))+'</b><div class="mu">'+ses.length+' sessioni svolte'+(at?' · presente in '+base.length:'')+'</div></div>';
 if(!ses.length)return h+'<div class="card mu">Nessuna sessione svolta da analizzare.</div>';
 var A={},CT={},LC={},M={},N={},PD={},PI={},CR={},CL={},GT={},GL={},FP={},SE={},SL={},SP={},RF={},VD={},PR={};
@@ -267,15 +268,15 @@ if(s.tipo.indexOf("Fuori pista")>=0&&(o=d["Fuori pista"]))(o.opt||[]).forEach(fu
 if(s.tipo.indexOf("Snow park")>=0&&(o=d["Snow park"])){(o.elem||[]).forEach(function(x){T(SE,x)});T(SL,o.liv)}
 if(s.tipo.indexOf("Speciale")>=0&&(o=d.Speciale))T(SP,o.sub=="Altro"?(o.subx||"Altro"):o.sub);
 ["Pali","Campo libero","Snow park","Gare"].forEach(function(a){if(s.tipo.indexOf(a)>=0)T(VD,(d[a]&&d[a].video)?"Con video":"Senza video")})});
-(at?[at]:S.ath.filter(function(a){return !REG.cat||a.cat==REG.cat})).forEach(function(a){var q=S.rif[a.id];if(q)q.o.forEach(function(x){if(roFor(a.cat).indexOf(x)>=0)T(RF,x)})});
+(at?[at]:S.ath.filter(function(a){return !REG.cat||inC(REG.cat,a.cat)})).forEach(function(a){var q=S.rif[a.id];if(q)q.o.forEach(function(x){if(roFor(a.cat).indexOf(x)>=0)T(RF,x)})});
 var tt="Presenze per categoria";
 if(at){tt="Presenze";PR={"Presente":base.length,"Assente":ses.length-base.length}}
-else if(REG.cat){tt="Presenti / assenti";var tot=S.ath.filter(function(a){return a.cat==REG.cat}).length,pt=0,ab=0;ses.forEach(function(s){var n=s.presenti.filter(function(id){return S.ath.some(function(a){return a.id==id&&a.cat==REG.cat})}).length;pt+=n;ab+=Math.max(0,tot-n)});PR={"Presenti":pt,"Assenti":ab}}
+else if(REG.cat){tt="Presenti / assenti";var tot=S.ath.filter(function(a){return inC(REG.cat,a.cat)}).length,pt=0,ab=0;ses.forEach(function(s){var n=s.presenti.filter(function(id){return S.ath.some(function(a){return a.id==id&&inC(REG.cat,a.cat)})}).length;pt+=n;ab+=Math.max(0,tot-n)});PR={"Presenti":pt,"Assenti":ab}}
 else ses.forEach(function(s){PR[s.cat]=(PR[s.cat]||0)+s.presenti.length});
 if(at&&!base.length)h+='<div class="card mu">Questo atleta non risulta presente in nessuna sessione: restano solo le presenze.</div>';
 return h+pie(tt,PR)+pie("Attività",A)+(REG.cat?"":pie("Sessioni per categoria",CT))+pie("Località",LC)+pie("Meteo",M)+pie("Neve",N)+pie("Pali · disciplina",PD)+pie("Pali · pista",PI)+pie("Pali · crono",CR)+pie("Campo libero · tipo di sci",CL)+pie("Gare · tipo",GT)+pie("Gare · località",GL)+pie("Fuori pista",FP)+pie("Snow park · elementi",SE)+pie("Snow park · livello",SL)+pie("Speciale",SP)+pie("Rifacimento sci",RF)+pie("Video",VD)}
 function regView(){var h=regCtl();if(REG.mode=="ana")return h+ana();if(REG.mode=="ath")return h;if(REG.mode=="bk")return h+bkView();if(REG.mode=="gare")return h+gareView();
-var l=S.ses.filter(function(s){return !REG.cat||s.cat==REG.cat}).sort(function(a,b){return (b.data+(b.ora||""))<(a.data+(a.ora||""))?-1:1});
+var l=S.ses.filter(function(s){return !REG.cat||sesIn(s.cat,REG.cat)}).sort(function(a,b){return (b.data+(b.ora||""))<(a.data+(a.ora||""))?-1:1});
 return h+(l.length?l.map(card).join(""):'<div class="card mu">Nessuna sessione.</div>')+'<div class="row" style="margin-top:10px"><button class="sec" id="exp">⬇️ Esporta tabelle (CSV)</button></div>'}
 function render(){nav();var h=NOTE?'<div class="card" style="color:var(--dg)">'+NOTE+'</div>':"";NOTE="";
 if(view=="cal"){h+=qod();var y=cur.getFullYear(),m=cur.getMonth(),first=(new Date(y,m,1).getDay()+6)%7,dim=new Date(y,m+1,0).getDate();
@@ -300,9 +301,9 @@ function chips(arr,sel,k,multi){return arr.map(function(x){return '<button type=
 function PR(f,list){var np=f.presenti.filter(function(i){return list.some(function(a){return a.id==i})}).length;
 return '<div class="row sp" style="margin-top:12px"><button type="button" class="sec" id="ptog" style="flex:1;text-align:left">'+(f.pcol?"▸":"▾")+' Presenze: <b>'+np+'</b>'+(f.pcol?" presenti":"/"+list.length)+'</button>'+(list.length?'<button type="button" class="sec" id="all">'+(list.every(function(a){return f.presenti.indexOf(a.id)>=0})?"Nessuno":"✔ Tutti presenti")+'</button>':"")+'</div>'+
 (f.pcol?"":(list.length?list.map(function(a){return '<label class="pres"><input type="checkbox" data-p="'+a.id+'"'+(f.presenti.indexOf(a.id)>=0?" checked":"")+'><span>'+esc(a.nome)+'</span></label>'}).join(""):(f.cat?'<div class="mu">Nessun atleta in “'+esc(f.cat)+'”. Aggiungili da Registro › Atleti.</div>':'<div class="mu">Seleziona prima la categoria.</div>')))}
-function chk(f){var np=f.presenti.filter(function(i){return S.ath.some(function(a){return a.id==i&&a.cat==f.cat})}).length,it=[["Categoria",!!f.cat],["Presenze",np>0],["Località",!!f.loc],["Attività",f.tipo.length>0],["Meteo",f.meteo.length>0],["Neve",!!f.neve]],n=it.filter(function(x){return x[1]}).length;
+function chk(f){var np=f.presenti.filter(function(i){return S.ath.some(function(a){return a.id==i&&inC(f.cat,a.cat)})}).length,it=[["Categoria",!!f.cat],["Presenze",np>0],["Località",!!f.loc],["Attività",f.tipo.length>0],["Meteo",f.meteo.length>0],["Neve",!!f.neve]],n=it.filter(function(x){return x[1]}).length;
 return '<div class="card" style="margin-top:16px"><div class="row sp"><b>Controllo prima di salvare</b><b style="font-size:18px;color:'+(n==6?"var(--ok)":"var(--pr)")+'">'+n+'/6</b></div><div style="margin-top:6px">'+it.map(function(x){return '<span class="tag" style="display:inline-block;margin:3px 4px 3px 0;font-size:13px;'+(x[1]?"":"background:var(--prbg);color:var(--pr)")+'">'+(x[1]?"✓ ":"○ ")+x[0]+'</span>'}).join("")+'</div></div>'}
-function form(){var f=F,list=S.ath.filter(function(a){return a.cat==f.cat});
+function form(){var f=F,list=S.ath.filter(function(a){return inC(f.cat,a.cat)});
 var h='<div class="row sp"><b style="font-size:18px">'+(S.ses.some(function(s){return s.id==f.id})?"Modifica":"Nuova")+' sessione</b><button class="sec" id="x">Back</button></div>'+
 '<label class="l">Data</label><input type="date" id="fd" value="'+f.data+'">'+
 '<label class="l">Categoria</label><select data-fc="1"><option value="">Seleziona categoria…</option>'+cats().map(function(c){return '<option'+(f.cat==c?" selected":"")+'>'+esc(c)+'</option>'}).join("")+'</select>'+(f.err&&!f.cat?'<div style="color:var(--dg);font-size:13px;margin-top:4px">Scegli la categoria per salvare.</div>':"")+
@@ -341,7 +342,7 @@ if(d.d){sel=d.d;return render()}
 if(d.e){var s=S.ses.find(function(x){return x.id==d.e});return openF(s)}
 if(t.id=="x")return closeF();
 if(d.cfr){sync();delete F.det[d.cfr][d.cfk];F.cerr="";return form()}
-if(t.id=="cpall"){var l2=S.ath.filter(function(a){return a.cat==REG.cat}),al=l2.every(function(a){return cq(a.id).p});l2.forEach(function(a){cq(a.id).p=al?0:1});save();return render()}
+if(t.id=="cpall"){var l2=S.ath.filter(function(a){return inC(REG.cat,a.cat)}),al=l2.every(function(a){return cq(a.id).p});l2.forEach(function(a){cq(a.id).p=al?0:1});save();return render()}
 if(d.ra){var rr=S.rif[d.ra]=S.rif[d.ra]||{o:[]},ri=rr.o.indexOf(d.x);ri>=0?rr.o.splice(ri,1):rr.o.push(d.x);rr.d=iso(new Date());if(!rr.o.length)delete S.rif[d.ra];save();return render()}
 if(d.gc){gsync();GF[d.gc]=GF[d.gc]==d.x?"":d.x;return render()}
 if(d.ge){var gg=S.gare.find(function(x){return x.id==d.ge});GF=JSON.parse(JSON.stringify(gg));return render()}
@@ -354,14 +355,14 @@ if(d.t){sync();F.det[d.t]=F.det[d.t]||{};F.det[d.t].tipo=F.det[d.t].tipo==d.x?""
 if(d.s){sync();F.det[d.s]=F.det[d.s]||{};F.det[d.s].sub=F.det[d.s].sub==d.x?"":d.x;return form()}
 if(d.c){sync();var k=d.c,v=d.x;if(k=="tipo"||k=="meteo"){var i=F[k].indexOf(v);i>=0?F[k].splice(i,1):F[k].push(v)}else if(k=="cat"){F.cat=v;F.presenti=[];if(F.det["Rifacimento sci"])F.det["Rifacimento sci"].ra={}}else F[k]=F[k]==v?"":v;return form()}
 if(t.id=="ptog"){sync();F.pcol=!F.pcol;return form()}
-if(t.id=="all"){sync();var l=S.ath.filter(function(a){return a.cat==F.cat}).map(function(a){return a.id});F.presenti=l.every(function(i){return F.presenti.indexOf(i)>=0})?[]:l;return form()}
+if(t.id=="all"){sync();var l=S.ath.filter(function(a){return inC(F.cat,a.cat)}).map(function(a){return a.id});F.presenti=l.every(function(i){return F.presenti.indexOf(i)>=0})?[]:l;return form()}
 if(t.id=="sv")return saveF();
 if(t.id=="del"){S.ses=S.ses.filter(function(s){return s.id!=F.id});save();closeF();return render()}
 if(t.id=="aadd"){var n=$("an").value.trim(),c=$("ac").value;if(n){S.ath.push({id:uid(),nome:n,cat:c,anno:parseInt($("ay").value)||""});save();render()}return}
 if(d.ad){S.ath=S.ath.filter(function(a){return a.id!=d.ad});S.ses.forEach(function(s){s.presenti=s.presenti.filter(function(i){return i!=d.ad})});save();return render()}
 if(t.id=="exp"){var A=csv([["ID_Sessione","Data","Categoria","Localita","Tipo_Attivita","Focus_Tecnico","Presenze","Condizioni_Meteo_Neve","Note_Coach"]].concat(S.ses.map(function(s){return [s.id,s.data,s.cat,ll(s),lab(s),foc(s),s.presenti.length,s.cond,s.note]})));
 var B=csv([["ID_Atleta","Nome","Categoria"]].concat(S.ath.map(function(a){return [a.id,a.nome,a.cat]})));
-var C=csv([["ID_Sessione","ID_Atleta","Presente"]].concat([].concat.apply([],S.ses.map(function(s){return S.ath.filter(function(a){return a.cat==s.cat}).map(function(a){return [s.id,a.id,s.presenti.indexOf(a.id)>=0?"SI":"NO"]})}))));
+var C=csv([["ID_Sessione","ID_Atleta","Presente"]].concat([].concat.apply([],S.ses.map(function(s){return S.ath.filter(function(a){return inC(s.cat,a.cat)}).map(function(a){return [s.id,a.id,s.presenti.indexOf(a.id)>=0?"SI":"NO"]})}))));
 $("main").innerHTML='<div class="card"><b>Allenamenti</b><textarea rows="6">'+esc(A)+'</textarea><b>Atleti</b><textarea rows="5">'+esc(B)+'</textarea><b>Presenze (Sessione ↔ Atleta)</b><textarea rows="6">'+esc(C)+'</textarea><div class="mu">Seleziona il testo e copialo in Excel/Fogli.</div><button class="sec" data-v="reg" style="margin-top:8px">Indietro</button></div>'}});
 document.addEventListener("input",function(e){var ds=e.target.dataset||{};if(ds.ci){cq(ds.ci).t[+ds.cj]=e.target.value;save()}});
 document.addEventListener("toggle",function(e){var t=e.target;if(t.dataset&&t.dataset.cat)OPEN[t.dataset.cat]=t.open},true);
