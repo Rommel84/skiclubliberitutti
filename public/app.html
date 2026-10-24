@@ -294,7 +294,7 @@ if(view=="rif")h+=catSel(true)+rifView();
 if(view=="crono")h+=crView();
 if(view=="reg"&&REG.mode=="ath"){h+='<div class="card"><label class="l" style="margin-top:0">Nuovo atleta</label><input id="an" placeholder="Cognome e nome"><label class="l">Anno di nascita (facoltativo)</label><input id="ay" type="number" inputmode="numeric" placeholder="es. 2015"><label class="l">Categoria</label><select id="ac">'+cats().map(function(c){return '<option>'+esc(c)+'</option>'}).join("")+'</select><div style="margin-top:10px"><button class="pri" id="aadd">Aggiungi</button></div></div>';
 cats().forEach(function(c){var a=S.ath.filter(function(x){return inC(c,x.cat)}).sort(function(p,q){return p.nome<q.nome?-1:1});if(!a.length)return;
-h+='<details data-cat="'+esc(c)+'"'+(OPEN[c]?' open':'')+' style="margin-top:10px"><summary style="font-weight:700;padding:8px 2px">'+esc(c)+' <span class="mu">('+a.length+')</span></summary>'+(c=="Children Race"?'<div class="mu" style="padding:2px 2px 6px;font-size:13px">Unisce gli atleti di Ragazzi Race e Allievi Race</div>':"")+'<div class="card">'+a.map(function(x,i){var p=S.ses.filter(function(s){return s.presenti.indexOf(x.id)>=0}).length;return '<div style="padding:7px 0'+(i<a.length-1?';border-bottom:1px solid var(--bd)':'')+'"><div class="row sp"><span>'+esc(x.nome)+' <span class="mu">'+(x.anno?'· '+x.anno+' ':'')+'· '+p+' pres.</span></span><button class="sec dg" data-ad="'+x.id+'">✕</button></div><div style="margin-top:5px">'+catTags(x)+'</div></div>'}).join("")+'</div></details>'});
+h+='<details data-cat="'+esc(c)+'"'+(OPEN[c]?' open':'')+' style="margin-top:10px"><summary style="font-weight:700;padding:8px 2px">'+esc(c)+' <span class="mu">('+a.length+')</span></summary>'+(c=="Children Race"?'<div class="mu" style="padding:2px 2px 6px;font-size:13px">Unisce gli atleti di Ragazzi Race e Allievi Race</div>':"")+'<div class="card">'+a.map(function(x,i){var p=S.ses.filter(function(s){return s.presenti.indexOf(x.id)>=0}).length;return '<div style="padding:7px 0'+(i<a.length-1?';border-bottom:1px solid var(--bd)':'')+'"><div class="row sp"><span>'+esc(x.nome)+' <span class="mu">'+(x.anno?'· '+x.anno+' ':'')+'· '+p+' pres.</span></span><span style="display:flex;gap:6px;flex:none"><button class="sec" data-ai="'+x.id+'" style="padding:6px 10px;font-size:13px">✨ AI</button><button class="sec dg" data-ad="'+x.id+'" style="padding:6px 10px">✕</button></span></div><div style="margin-top:5px">'+catTags(x)+'</div></div>'}).join("")+'</div></details>'});
 var orf=S.ath.filter(function(a){return CAT0.indexOf(a.cat)<0});if(orf.length)h+='<h3 style="margin:14px 2px 0">Da riassegnare</h3><div class="card">'+orf.map(function(x){return '<div class="row sp" style="padding:6px 0"><span>'+esc(x.nome)+'</span><select data-ar="'+x.id+'" style="width:auto"><option value="">Categoria…</option>'+cats().map(function(c){return '<option>'+esc(c)+'</option>'}).join('')+'</select></div>'}).join('')+'</div>';
 if(!S.ath.length)h+='<div class="card mu">Aggiungi i tuoi atleti: potrai poi spuntare le presenze in ogni sessione.</div>'}
 $("main").innerHTML=h;updFab()}
@@ -326,6 +326,23 @@ function saveF(){sync();if(!F.cat){F.err=true;form();try{scrollTo(0,0)}catch(e){
 var o={id:F.id,data:F.data||iso(new Date()),ora:F.ora,cat:F.cat,loc:F.loc,locx:F.loc=="Altro"?F.locx:"",det:(function(){var d={};F.tipo.forEach(function(a){if(F.det[a])d[a]=F.det[a]});return d})(),tipo:F.tipo.concat(F.extra?F.extra.split(",").map(function(x){return x.trim()}).filter(Boolean):[]),presenti:F.presenti,cond:cond,note:F.note};
 var i=S.ses.findIndex(function(s){return s.id==o.id});if(i>=0)S.ses[i]=o;else S.ses.push(o);sel=o.data;cur=new Date(o.data+"T00:00");if(!save()){var hf=false;Object.keys(o.det||{}).forEach(function(k){var q=o.det[k];if(q.cfile){delete q.cfile;hf=true}if(q.rfile){delete q.rfile;hf=true}if(q.tfile){delete q.tfile;hf=true}});if(hf){NOTE="Memoria piena: sessione salvata senza il file allegato."}if(!save())NOTE="Impossibile salvare: memoria del dispositivo piena."}closeF();render()}
 function csv(rows){return rows.map(function(r){return r.map(function(v){return '"'+String(v==null?"":v).replace(/"/g,'""')+'"'}).join(",")}).join("\n")}
+function aiOpen(id){var a=S.ath.find(function(x){return x.id==id});if(!a)return;
+var rec=S.ses.filter(function(s){return s.presenti.indexOf(id)>=0}).sort(function(p,q){return p.data<q.data?1:-1}).slice(0,12);
+var h='<div class="card"><div class="row sp"><b>✨ '+esc(a.nome)+'</b><button class="sec" id="aiclose" style="padding:6px 10px">✕</button></div><div style="margin:6px 0 2px">'+catTags(a)+'</div><div class="mu">'+S.ses.filter(function(s){return s.presenti.indexOf(id)>=0}).length+' presenze registrate</div></div>';
+h+='<div class="card"><b>Riepilogo AI dei progressi</b><div class="mu" style="margin:4px 0 2px">Descrivi le attivit\u00e0 recenti e gli obiettivi: l\'AI genera un riepilogo dei progressi e suggerisce il prossimo focus di allenamento personalizzato.</div>';
+h+='<label class="l">Attivit\u00e0 recenti</label><textarea id="aiact" rows="4" placeholder="es. gigante su neve dura, lavoro sugli spigoli, uscite di curva\u2026"></textarea>';
+h+='<label class="l">Obiettivi dell\'atleta</label><textarea id="aigoal" rows="3" placeholder="es. migliorare la partenza, qualificarsi alle regionali\u2026"></textarea>';
+h+='<div style="margin-top:10px"><button class="pri" id="aigen">Genera riepilogo</button></div><div id="aiout" style="margin-top:12px"></div></div>';
+var ov=document.createElement("div");ov.id="aiov";ov.className="sheet";ov.innerHTML=h;document.body.appendChild(ov);
+ov._ctx={a:a,rec:rec.map(function(s){return {data:s.data,attivita:lab(s),focus:foc(s),condizioni:s.cond||"",note:s.note||""}})};try{scrollTo(0,0)}catch(e){}}
+function aiClose(){var ov=$("aiov");if(ov)ov.remove()}
+function aiGen(){var ov=$("aiov");if(!ov||!ov._ctx)return;var c=ov._ctx,out=$("aiout");
+var act=$("aiact").value.trim(),goal=$("aigoal").value.trim();
+if(!act&&!goal){out.innerHTML='<div class="card" style="color:var(--dg)">Inserisci almeno le attivit\u00e0 recenti o gli obiettivi.</div>';return}
+out.innerHTML='<div class="mu">Generazione in corso\u2026</div>';
+fetch("/api/public/athlete-coach",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({nome:c.a.nome,anno:c.a.anno||null,categorie:catsOf(c.a),attivita:act,obiettivi:goal,presenze:c.rec})}).then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j}})}).then(function(r){
+if(!r.ok){out.innerHTML='<div class="card" style="color:var(--dg)">'+esc(r.j.error||"Errore durante la generazione.")+'</div>';return}
+out.innerHTML='<div class="card" style="background:var(--ac2)"><b>Riepilogo e prossimo focus</b><div style="margin-top:6px;white-space:pre-wrap">'+esc(r.j.testo)+'</div></div>'}).catch(function(){out.innerHTML='<div class="card" style="color:var(--dg)">Connessione non riuscita. Controlla la rete e riprova.</div>'})}
 document.addEventListener("click",function(e){var t=e.target.closest("button,.card[data-e]");if(!t)return;var d=t.dataset;
 if(t.id=="fab"){if(F&&RET){RET=false;$("sheet").classList.remove("hide");$("fab").classList.add("hide");return form()}return openF()}
 if(t.id=="gocr"){sync();CRS.date=F.data;REG.cat=F.cat;view="crono";RET=true;$("sheet").classList.add("hide");$("fab").classList.remove("hide");render();try{scrollTo(0,0)}catch(e){}return}
@@ -343,6 +360,9 @@ if(d.m){cur=new Date(cur.getFullYear(),cur.getMonth()+ +d.m,1);return render()}
 if(d.d){sel=d.d;return render()}
 if(d.e){var s=S.ses.find(function(x){return x.id==d.e});return openF(s)}
 if(t.id=="x")return closeF();
+if(d.ai)return aiOpen(d.ai);
+if(t.id=="aiclose")return aiClose();
+if(t.id=="aigen")return aiGen();
 if(d.cfr){sync();delete F.det[d.cfr][d.cfk];F.cerr="";return form()}
 if(t.id=="cpall"){var l2=S.ath.filter(function(a){return inC(REG.cat,a.cat)}),al=l2.every(function(a){return cq(a.id).p});l2.forEach(function(a){cq(a.id).p=al?0:1});save();return render()}
 if(d.ra){var rr=S.rif[d.ra]=S.rif[d.ra]||{o:[]},ri=rr.o.indexOf(d.x);ri>=0?rr.o.splice(ri,1):rr.o.push(d.x);rr.d=iso(new Date());if(!rr.o.length)delete S.rif[d.ra];save();return render()}
