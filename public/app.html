@@ -336,13 +336,18 @@ h+='<div style="margin-top:10px"><button class="pri" id="aigen">Genera riepilogo
 var ov=document.createElement("div");ov.id="aiov";ov.className="sheet";ov.innerHTML=h;document.body.appendChild(ov);
 ov._ctx={a:a,rec:rec.map(function(s){return {data:s.data,attivita:lab(s),focus:foc(s),condizioni:s.cond||"",note:s.note||""}})};try{scrollTo(0,0)}catch(e){}}
 function aiClose(){var ov=$("aiov");if(ov)ov.remove()}
+function mdLite(t){return esc(t).split("\n").map(function(l){
+var m=l.match(/^##\s+(.*)$/);if(m)return '<div style="font-weight:700;margin:10px 0 4px">'+m[1]+'</div>';
+m=l.match(/^-\s+(.*)$/);if(m)return '<div style="padding-left:14px;text-indent:-10px;margin:3px 0">\u2022 '+mdB(m[1])+'</div>';
+return l?'<div style="margin:6px 0">'+mdB(l)+'</div>':''}).join("")}
+function mdB(l){return l.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')}
 function aiGen(){var ov=$("aiov");if(!ov||!ov._ctx)return;var c=ov._ctx,out=$("aiout");
 var act=$("aiact").value.trim(),goal=$("aigoal").value.trim();
 if(!act&&!goal){out.innerHTML='<div class="card" style="color:var(--dg)">Inserisci almeno le attivit\u00e0 recenti o gli obiettivi.</div>';return}
 out.innerHTML='<div class="mu">Generazione in corso\u2026</div>';
 fetch("/api/public/athlete-coach",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({nome:c.a.nome,anno:c.a.anno||null,categorie:catsOf(c.a),attivita:act,obiettivi:goal,presenze:c.rec})}).then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j}})}).then(function(r){
 if(!r.ok){out.innerHTML='<div class="card" style="color:var(--dg)">'+esc(r.j.error||"Errore durante la generazione.")+'</div>';return}
-out.innerHTML='<div class="card" style="background:var(--ac2)"><b>Riepilogo e prossimo focus</b><div style="margin-top:6px;white-space:pre-wrap">'+esc(r.j.testo)+'</div></div>'}).catch(function(){out.innerHTML='<div class="card" style="color:var(--dg)">Connessione non riuscita. Controlla la rete e riprova.</div>'})}
+out.innerHTML='<div class="card" style="background:var(--ac2)"><b>Riepilogo e prossimo focus</b><div style="margin-top:6px">'+mdLite(r.j.testo)+'</div></div>'}).catch(function(){out.innerHTML='<div class="card" style="color:var(--dg)">Connessione non riuscita. Controlla la rete e riprova.</div>'})}
 document.addEventListener("click",function(e){var t=e.target.closest("button,.card[data-e]");if(!t)return;var d=t.dataset;
 if(t.id=="fab"){if(F&&RET){RET=false;$("sheet").classList.remove("hide");$("fab").classList.add("hide");return form()}return openF()}
 if(t.id=="gocr"){sync();CRS.date=F.data;REG.cat=F.cat;view="crono";RET=true;$("sheet").classList.add("hide");$("fab").classList.remove("hide");render();try{scrollTo(0,0)}catch(e){}return}
