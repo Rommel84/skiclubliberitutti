@@ -7,8 +7,8 @@ import { describe, expect, it } from "vitest";
 const html = readFileSync(path.resolve(__dirname, "../../public/app.html"), "utf8");
 
 function loadApp() {
-  const body = /<body>([\s\S]*?)<\/body>/.exec(html)![1];
-  const script = /<script>([\s\S]*?)<\/script>/.exec(html)![1];
+  const body = /<body>([\s\S]*?)<\/body>/.exec(html)![1]!;
+  const script = /<script>([\s\S]*?)<\/script>/.exec(html)![1]!;
   document.body.innerHTML = body.replace(/<script>[\s\S]*?<\/script>/g, "");
   (window as any).eval(script);
   return window as any;
