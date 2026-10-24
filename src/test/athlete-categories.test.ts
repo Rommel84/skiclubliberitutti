@@ -41,6 +41,7 @@ describe("Categorie in scheda atleta", () => {
   });
 
   it("shows the category pills on the athlete card", () => {
+    w.view = "reg";
     w.REG.mode = "ath";
     w.render();
     const main = document.getElementById("main")!;
