@@ -65,3 +65,30 @@ describe("Categorie in scheda atleta", () => {
       .forEach((a: any) => expect(text).toContain(a.nome));
   });
 });
+
+describe("Riepilogo AI in scheda atleta", () => {
+  const w = loadApp();
+  w.view = "reg";
+  w.REG.mode = "ath";
+  w.render();
+
+  it("shows an AI button wired to the athlete id on every athlete row", () => {
+    const main = document.getElementById("main")!;
+    for (const a of w.S.ath) {
+      const btn = main.querySelector(`button[data-ai="${a.id}"]`);
+      expect(btn, `expected an AI button for ${a.nome}`).not.toBeNull();
+    }
+  });
+
+  it("renders the AI summary markdown as headings, bold and bullets", () => {
+    const html = w.mdLite("## RIEPILOGO\n\nTesto con **grassetto**\n- punto uno");
+    expect(html).toContain("<b>grassetto</b>");
+    expect(html).toContain("RIEPILOGO");
+    expect(html).toContain("punto uno");
+    expect(html).not.toContain("**");
+  });
+
+  it("escapes HTML in the AI summary before rendering", () => {
+    expect(w.mdLite("<img src=x onerror=alert(1)>")).not.toContain("<img");
+  });
+});
