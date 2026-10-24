@@ -17,8 +17,9 @@ function loadApp() {
 function tagsOf(main: HTMLElement, category: string, athlete: string) {
   const details = main.querySelector(`details[data-cat="${category}"]`)!;
   expect(details, `expected a "${category}" group`).not.toBeNull();
-  const row = Array.from(details.querySelectorAll("div")).find((d) =>
-    (d.querySelector("span")?.textContent || "").includes(athlete),
+  const rows = Array.from(details.querySelectorAll(":scope > div.card > div"));
+  const row = rows.find((d) =>
+    (d.querySelector(".row.sp > span")?.textContent || "").includes(athlete),
   )!;
   expect(row, `expected a card for ${athlete}`).not.toBeNull();
   return Array.from(row.querySelectorAll(".tag")).map((t) => t.textContent!.trim());
