@@ -38,6 +38,7 @@ label.l{display:block;font-size:13px;color:var(--mu);margin:12px 0 4px}
 .pres{display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid var(--bd)}
 .pres input{width:24px;height:24px;flex:none}
 .hide{display:none}
+#auth{z-index:20}
 .tbl{overflow-x:auto}table{border-collapse:collapse;font-size:13px;width:100%}td,th{border:1px solid var(--bd);padding:4px 6px;text-align:left;white-space:nowrap}
 .rs{display:grid;grid-template-columns:minmax(0,1fr) repeat(4,46px);align-items:center;gap:2px;border-bottom:1px solid var(--bd);padding:3px 0}
 .rs .nm{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -110,6 +111,7 @@ body{transition:background .25s ease,color .25s ease}
 <main id="main"></main>
 <button class="pri fab" id="fab">＋ Nuova sessione</button>
 <div id="sheet" class="sheet hide"></div>
+<div id="auth" class="sheet hide"></div>
 
 <script>
 var ACT=["Campo libero","Pali","Fuori pista","Snow park","Gare","Speciale","Trasferte","Atletica"];
