@@ -10,4 +10,4 @@
 <!-- LOVABLE:END -->
 
 - The app itself is the self-contained `public/app.html` (vanilla JS), embedded by `src/routes/index.tsx` in an iframe; app features are edited directly in that file.
-- AI features run through a TanStack server route under `src/routes/api/public/` calling `src/lib/ai/coach.server.ts` (gateway helpers in `src/lib/ai/`), because the static `app.html` can only reach the backend via plain `fetch`; keep `LOVABLE_API_KEY` server-side.
+- Coach authentication is fully client-side inside `public/app.html`: whitelisted users live in `S.users` (persisted in the `lt_v1` localStorage blob), the session is the `lt_session` localStorage key, and password reset is admin-managed (no email is ever sent).

@@ -66,29 +66,57 @@ describe("Categorie in scheda atleta", () => {
   });
 });
 
-describe("Riepilogo AI in scheda atleta", () => {
-  const w = loadApp();
-  w.view = "reg";
-  w.REG.mode = "ath";
-  w.render();
+describe("Accesso allenatori", () => {
+  it("gates the app on first run and lets the admin log in after setup", async () => {
+    localStorage.clear();
+    const w = loadApp();
+    expect(w.AMODE).toBe("setup");
+    expect(document.getElementById("auth")!.classList.contains("hide")).toBe(false);
 
-  it("shows an AI button wired to the athlete id on every athlete row", () => {
-    const main = document.getElementById("main")!;
-    for (const a of w.S.ath) {
-      const btn = main.querySelector(`button[data-ai="${a.id}"]`);
-      expect(btn, `expected an AI button for ${a.nome}`).not.toBeNull();
-    }
+    expect(await w.auSetup("admin@sciclub.it", "Admin", "123", "123")).toContain("almeno 6");
+    expect(await w.auSetup("admin@sciclub.it", "Admin", "segreta1", "segreta1")).toBe("");
+    expect(w.curUser().email).toBe("admin@sciclub.it");
+    expect(w.curUser().admin).toBe(1);
+    expect(document.getElementById("auth")!.classList.contains("hide")).toBe(true);
   });
 
-  it("renders the AI summary markdown as headings, bold and bullets", () => {
-    const html = w.mdLite("## RIEPILOGO\n\nTesto con **grassetto**\n- punto uno");
-    expect(html).toContain("<b>grassetto</b>");
-    expect(html).toContain("RIEPILOGO");
-    expect(html).toContain("punto uno");
-    expect(html).not.toContain("**");
+  it("rejects non-whitelisted emails and lets a whitelisted coach set a password", async () => {
+    localStorage.clear();
+    const w = loadApp();
+    await w.auSetup("admin@sciclub.it", "Admin", "segreta1", "segreta1");
+    expect(await w.auLogin("esterno@example.com", "qualunque")).toContain("non è autorizzato");
+
+    expect(w.auAdd("coach@sciclub.it", "Coach")).toBe("");
+    w.auLogout();
+    expect(w.curUser()).toBeNull();
+
+    // first access: no password yet -> redirected to password creation
+    expect(await w.auLogin("coach@sciclub.it", "qualunque")).toContain("Primo accesso");
+    expect(w.AMODE).toBe("setpw");
+    expect(await w.auSetPw("coach@sciclub.it", "coachpass", "coachpass")).toBe("");
+    expect(w.curUser().email).toBe("coach@sciclub.it");
+
+    w.auLogout();
+    expect(await w.auLogin("coach@sciclub.it", "sbagliata")).toContain("Password errata");
+    expect(await w.auLogin("coach@sciclub.it", "coachpass")).toBe("");
   });
 
-  it("escapes HTML in the AI summary before rendering", () => {
-    expect(w.mdLite("<img src=x onerror=alert(1)>")).not.toContain("<img");
+  it("flags reset requests and lets the admin set a temporary password", async () => {
+    localStorage.clear();
+    const w = loadApp();
+    await w.auSetup("admin@sciclub.it", "Admin", "segreta1", "segreta1");
+    w.auAdd("coach@sciclub.it", "Coach");
+    await w.auSetPw("coach@sciclub.it", "coachpass", "coachpass");
+    w.auLogout();
+
+    w.auForgot("coach@sciclub.it");
+    expect(w.findUser("coach@sciclub.it").reset).toBe(1);
+
+    await w.auLogin("admin@sciclub.it", "segreta1");
+    expect(await w.auAdminPw(w.findUser("coach@sciclub.it").id, "temp123")).toBe("");
+    expect(w.findUser("coach@sciclub.it").reset).toBe(0);
+
+    w.auLogout();
+    expect(await w.auLogin("coach@sciclub.it", "temp123")).toBe("");
   });
 });
