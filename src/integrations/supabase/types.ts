@@ -84,6 +84,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      request_coach_password_reset: {
+        Args: { coach_email: string }
+        Returns: undefined
+      }
       request_coach_reset: { Args: never; Returns: undefined }
     }
     Enums: {

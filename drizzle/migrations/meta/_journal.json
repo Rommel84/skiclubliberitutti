@@ -8,6 +8,13 @@
       "when": 1793080726151,
       "tag": "0000_coach_access_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793080758773,
+      "tag": "0001_coach_reset_requests",
+      "breakpoints": true
     }
   ]
 }
