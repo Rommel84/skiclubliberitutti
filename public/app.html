@@ -349,18 +349,16 @@ function gpDelProg(id){var a=gpAth();if(!a||!a.prog)return;a.prog=a.prog.filter(
 document.addEventListener("click",function(e){var t=e.target.closest("button,.card[data-e]");if(!t)return;var d=t.dataset;
 if(t.id=="acctbtn")return acctOpen();
 if(t.id=="acctclose")return authHide();
-if(t.id=="asetup")return auSetup($("au_em").value,$("au_nome").value,$("au_pw").value,$("au_pw2").value);
 if(t.id=="alogin")return auLogin($("au_em").value,$("au_pw").value);
-if(t.id=="ashowsetpw"){AMODE="setpw";AERR="";AOK="";return authPaint()}
-if(t.id=="ashowforgot"){AMODE="forgot";AERR="";AOK="";return authPaint()}
-if(t.id=="abacklogin"){AMODE="login";AERR="";AOK="";return authPaint()}
-if(t.id=="asetpw")return auSetPw($("au_em").value,$("au_pw").value,$("au_pw2").value);
+if(t.id=="ashowregister"){AMODE="register";return authNote("")}
+if(t.id=="aregister")return auRegister($("au_em").value,$("au_nome").value,$("au_cognome").value,$("au_pw").value,$("au_pw2").value);
+if(t.id=="ashowforgot"){AMODE="forgot";return authNote("")}
+if(t.id=="abacklogin"){AMODE="login";return authNote("")}
 if(t.id=="aforgot")return auForgot($("au_em").value);
 if(t.id=="alogout")return auLogout();
+if(t.id=="arefresh")return auRefresh();
 if(t.id=="apwch")return auChPw($("au_old").value,$("au_pw").value,$("au_pw2").value);
-if(t.id=="auadd")return auAdd($("au_em2").value,$("au_nome2").value);
-if(d.audel)return auDel(d.audel);
-if(d.auadm)return auTogAdm(d.auadm);
+if(d.audec)return auDecide(d.audec,d.decision);
 if(d.aupw)return auAdminPw(d.aupw,$("aupw_"+d.aupw).value);
 if(t.id=="fab"){if(F&&RET){RET=false;$("sheet").classList.remove("hide");$("fab").classList.add("hide");return form()}return openF()}
 if(t.id=="gocr"){sync();CRS.date=F.data;REG.cat=F.cat;view="crono";RET=true;$("sheet").classList.add("hide");$("fab").classList.remove("hide");render();try{scrollTo(0,0)}catch(e){}return}
@@ -419,79 +417,51 @@ if(ds.rf){GF=null;REG[ds.rf]=tg.value;if(ds.rf=="cat")REG.ath="";return render()
 if(ds.ck){sync();var a=ds.a;F.det[a]=F.det[a]||{};F.det[a][ds.ck]=tg.checked;return form()}
 if(ds.cf){var fi=tg.files[0];if(!fi)return;sync();var fa=ds.cf,fk=ds.cfk;if(fi.size>1000000){F.cerr=fk+fa;return form()}var rd=new FileReader();rd.onload=function(){F.det[fa]=F.det[fa]||{};F.det[fa][fk]={name:fi.name,type:fi.type,data:rd.result};F.cerr="";form()};rd.readAsDataURL(fi);return}
 var ar=e.target.dataset&&e.target.dataset.ar;if(ar&&e.target.value){var a=S.ath.find(function(x){return x.id==ar});a.cat=e.target.value;save();return render()}var p=e.target.dataset&&e.target.dataset.p;if(p){sync();var i=F.presenti.indexOf(p);e.target.checked?(i<0&&F.presenti.push(p)):(i>=0&&F.presenti.splice(i,1));form()}});
-// ===== Accesso allenatori (interno all'app, senza server) =====
-S.users=S.users||[];
-function hpw(salt,pw){var s=salt+"|"+pw;try{if(window.crypto&&crypto.subtle)return crypto.subtle.digest("SHA-256",new TextEncoder().encode(s)).then(function(b){return Array.from(new Uint8Array(b)).map(function(x){return("0"+x.toString(16)).slice(-2)}).join("")})}catch(e){}return Promise.resolve(fbh(s))}
-function fbh(s){var h1=0xdeadbeef,h2=0x41c6ce57,i,c;for(i=0;i<s.length;i++){c=s.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return(h2>>>0).toString(16)+(h1>>>0).toString(16)}
-function sessGet(){try{return localStorage.getItem("lt_session")||""}catch(e){return""}}
-function sessSet(e){try{if(e)localStorage.setItem("lt_session",e);else localStorage.removeItem("lt_session")}catch(x){}}
-function findUser(e){e=(e||"").trim().toLowerCase();return S.users.find(function(u){return u.email==e})||null}
-function curUser(){var e=sessGet();return e?findUser(e):null}
-var AMODE="",AERR="",AOK="";
+// ===== Richieste allenatori condivise =====
+var AMODE="login",AERR="",AOK="",AUSER=null,AREQUESTS=[],ABUSY=false;
 function emOk(e){return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)}
-function authGate(){S.users=S.users||[];if(curUser()){authHide();return false}AMODE=S.users.length?"login":"setup";AERR="";AOK="";authPaint();return true}
-function authHide(){var a=$("auth");a.classList.add("hide");a.innerHTML=""}
+function cloud(){try{return window.parent.LTCloud||null}catch(e){return null}}
+function curUser(){return AUSER&&AUSER.status=="approved"?AUSER:null}
+function authGate(){if(curUser()){authHide();return false}if(AUSER)AMODE="pending";authPaint();return true}
+function authHide(){if(!curUser())return;var a=$("auth");a.classList.add("hide");a.innerHTML=""}
+function authNote(err,ok){AERR=err||"";AOK=ok||"";authPaint();return AERR}
+function authStatus(s){return {pending:"In attesa",approved:"Approvato",rejected:"Rifiutato",revoked:"Accesso revocato"}[s]||s}
+function authApply(v){AUSER=v.user;AREQUESTS=v.requests||[]}
+async function authRun(fn){if(ABUSY)return;ABUSY=true;document.querySelectorAll('#auth button').forEach(function(b){b.disabled=true});try{await fn()}catch(e){authNote(e.message||"Operazione non riuscita. Riprova.")}finally{ABUSY=false;document.querySelectorAll('#auth button').forEach(function(b){b.disabled=false})}}
 function authPaint(){var a=$("auth");a.classList.remove("hide");$("fab").classList.add("hide");
-var h='<div style="max-width:420px;margin:24px auto"><div class="card"><b style="font-size:18px">⛷️ Registro allenamenti</b><div class="mu" style="margin-top:2px">Sci Club Liberi Tutti — area riservata agli allenatori</div></div>';
-if(AERR)h+='<div class="card" style="color:var(--dg)">'+esc(AERR)+'</div>';
-if(AOK)h+='<div class="card" style="color:var(--ok)">'+esc(AOK)+'</div>';
-if(AMODE=="setup"){h+='<div class="card"><b>Primo accesso</b><div class="mu" style="margin:4px 0">Crea l\u2019account amministratore: potrà autorizzare gli altri allenatori.</div><label class="l">Email</label><input id="au_em" type="email" autocomplete="username"><label class="l">Nome</label><input id="au_nome"><label class="l">Password (min. 6 caratteri)</label><input id="au_pw" type="password" autocomplete="new-password"><label class="l">Ripeti password</label><input id="au_pw2" type="password" autocomplete="new-password"><div style="margin-top:12px"><button class="pri" id="asetup" style="width:100%">Crea account amministratore</button></div></div>'}
-else if(AMODE=="login"){h+='<div class="card"><b>Accedi</b><label class="l">Email</label><input id="au_em" type="email" autocomplete="username"><label class="l">Password</label><input id="au_pw" type="password" autocomplete="current-password"><div style="margin-top:12px"><button class="pri" id="alogin" style="width:100%">Accedi</button></div><div class="row sp" style="margin-top:10px"><button class="sec" id="ashowsetpw" style="font-size:13px;padding:7px 10px">Primo accesso?</button><button class="sec" id="ashowforgot" style="font-size:13px;padding:7px 10px">Password dimenticata?</button></div></div>'}
-else if(AMODE=="setpw"){h+='<div class="card"><b>Crea la tua password</b><div class="mu" style="margin:4px 0">Il tuo indirizzo email deve essere stato autorizzato dall\u2019amministratore.</div><label class="l">Email</label><input id="au_em" type="email"><label class="l">Nuova password (min. 6 caratteri)</label><input id="au_pw" type="password" autocomplete="new-password"><label class="l">Ripeti password</label><input id="au_pw2" type="password" autocomplete="new-password"><div style="margin-top:12px"><button class="pri" id="asetpw" style="width:100%">Crea password e accedi</button></div><div style="margin-top:10px"><button class="sec" id="abacklogin" style="font-size:13px;padding:7px 10px">‹ Torna all\u2019accesso</button></div></div>'}
-else if(AMODE=="forgot"){h+='<div class="card"><b>Recupero password</b><div class="mu" style="margin:4px 0">Inserisci la tua email: l\u2019amministratore riceverà la richiesta e ti comunicherà una nuova password temporanea.</div><label class="l">Email</label><input id="au_em" type="email"><div style="margin-top:12px"><button class="pri" id="aforgot" style="width:100%">Richiedi il recupero</button></div><div style="margin-top:10px"><button class="sec" id="abacklogin" style="font-size:13px;padding:7px 10px">‹ Torna all\u2019accesso</button></div></div>'}
-else if(AMODE=="acct"){h+=acctHtml()}
-h+='</div>';a.innerHTML=h}
+var h='<div style="max-width:520px;margin:24px auto"><div class="card"><b style="font-size:18px">⛷️ Registro allenamenti</b><div class="mu">Sci Club Liberi Tutti — allenatori</div></div>';
+if(AERR)h+='<div class="card" style="color:var(--dg)" role="alert">'+esc(AERR)+'</div>';
+if(AOK)h+='<div class="card" style="color:var(--ok)" role="status">'+esc(AOK)+'</div>';
+if(AMODE=="loading")h+='<div class="card">Verifica accesso…</div>';
+else if(AMODE=="login")h+='<div class="card"><b>Accedi</b><label class="l" for="au_em">Email</label><input id="au_em" type="email" autocomplete="username"><label class="l" for="au_pw">Password</label><input id="au_pw" type="password" autocomplete="current-password"><div style="margin-top:12px"><button class="pri" id="alogin" style="width:100%">Accedi</button></div><div class="row" style="margin-top:10px;flex-wrap:wrap"><button class="sec" id="ashowregister">Richiedi accesso</button><button class="sec" id="ashowforgot">Password dimenticata?</button></div></div>';
+else if(AMODE=="register")h+='<div class="card"><b>Richiedi accesso come allenatore</b><label class="l" for="au_nome">Nome</label><input id="au_nome" autocomplete="given-name"><label class="l" for="au_cognome">Cognome</label><input id="au_cognome" autocomplete="family-name"><label class="l" for="au_em">Email</label><input id="au_em" type="email" autocomplete="username"><label class="l" for="au_pw">Password (min. 6 caratteri)</label><input id="au_pw" type="password" autocomplete="new-password"><label class="l" for="au_pw2">Ripeti password</label><input id="au_pw2" type="password" autocomplete="new-password"><div style="margin-top:12px"><button class="pri" id="aregister">Invia richiesta</button></div><div style="margin-top:10px"><button class="sec" id="abacklogin">‹ Torna all’accesso</button></div></div>';
+else if(AMODE=="pending"){h+='<div class="card"><b>'+esc(authStatus(AUSER.status))+'</b><div class="mu" style="margin:10px 0">'+esc(AUSER.email)+'</div><p>'+(AUSER.status=="pending"?'La tua richiesta è stata inviata al responsabile. Potrai accedere dopo la sua approvazione.':AUSER.status=="rejected"?'Il responsabile non ha approvato la tua richiesta.':'Il responsabile ha revocato il tuo accesso.')+'</p><div class="row"><button class="sec" id="arefresh">Aggiorna stato</button><button class="sec" id="alogout">Esci</button></div></div>'}
+else if(AMODE=="forgot")h+='<div class="card"><b>Recupero password</b><p>Il responsabile riceverà la richiesta nell’app e ti comunicherà una password temporanea.</p><label class="l" for="au_em">Email</label><input id="au_em" type="email"><div style="margin-top:12px"><button class="pri" id="aforgot">Richiedi il recupero</button></div><div style="margin-top:10px"><button class="sec" id="abacklogin">‹ Torna all’accesso</button></div></div>';
+else if(AMODE=="acct")h+=acctHtml();
+a.innerHTML=h+'</div>'}
 function acctHtml(){var u=curUser();if(!u)return"";
-var h='<div class="card"><div class="row sp"><div><b>'+esc(u.nome||u.email)+'</b><div class="mu">'+esc(u.email)+(u.admin?' · <span class="tag">Amministratore</span>':"")+'</div></div><button class="sec" id="acctclose" style="padding:7px 10px;flex:none">✕</button></div></div>';
-h+='<div class="card"><b>Cambia password</b><label class="l">Password attuale</label><input id="au_old" type="password" autocomplete="current-password"><label class="l">Nuova password (min. 6 caratteri)</label><input id="au_pw" type="password" autocomplete="new-password"><label class="l">Ripeti nuova password</label><input id="au_pw2" type="password" autocomplete="new-password"><div style="margin-top:12px"><button class="sec" id="apwch">Cambia password</button></div></div>';
-if(u.admin){h+='<div class="card"><b>Allenatori autorizzati</b><div class="mu" style="margin:4px 0">Solo gli indirizzi in questa lista possono accedere. Al primo accesso l\u2019allenatore crea la propria password.</div>';
-h+=S.users.map(function(x){return '<div style="padding:8px 0;border-bottom:1px solid var(--bd)"><div class="row sp"><div><b>'+esc(x.nome||x.email)+'</b> '+(x.admin?'<span class="tag">Admin</span> ':"")+(x.reset?'<span class="tag p">Reset richiesto</span> ':"")+(!x.hash?'<span class="tag p">Senza password</span>':"")+'<div class="mu" style="font-size:13px">'+esc(x.email)+'</div></div><div class="row" style="flex:none">'+(x.id!=u.id?'<button class="sec" data-auadm="'+x.id+'" style="padding:6px 9px;font-size:13px">'+(x.admin?"Togli admin":"Rendi admin")+'</button><button class="sec dg" data-audel="'+x.id+'" style="padding:6px 9px;font-size:13px">✕</button>':"")+'</div></div><div class="row" style="margin-top:6px;gap:6px"><input id="aupw_'+x.id+'" type="text" placeholder="Nuova password temporanea" style="flex:1"><button class="sec" data-aupw="'+x.id+'" style="padding:6px 9px;font-size:13px;flex:none">Imposta</button></div></div>'}).join("");
-h+='<label class="l">Autorizza un nuovo allenatore</label><input id="au_em2" type="email" placeholder="Email"><div style="height:6px"></div><input id="au_nome2" placeholder="Nome"><div style="margin-top:10px"><button class="sec" id="auadd">Autorizza</button></div></div>'}
-h+='<div style="margin:10px 0"><button class="pri" id="alogout" style="width:100%">Esci</button></div>';
-return h}
-function authNote(err,ok){AERR=err||"";AOK=ok||"";authPaint();return err||""}
-async function auSetup(e,n,p,p2){e=(e||"").trim().toLowerCase();n=(n||"").trim();
-if(S.users.length)return authNote("L\u2019account amministratore esiste già.");
-if(!emOk(e))return authNote("Inserisci un indirizzo email valido.");
-if(!n)return authNote("Inserisci il tuo nome.");
-if((p||"").length<6)return authNote("La password deve avere almeno 6 caratteri.");
-if(p!=p2)return authNote("Le due password non coincidono.");
-var h=await hpw(e,p);S.users.push({id:uid(),email:e,nome:n,hash:h,admin:1,reset:0});save();sessSet(e);authHide();render();return""}
-async function auLogin(e,p){var u=findUser(e);
-if(!u)return authNote("Questo indirizzo non è autorizzato. Chiedi all\u2019amministratore di aggiungerti.");
-if(!u.hash){AMODE="setpw";return authNote("Primo accesso: crea la tua password.")}
-var h=await hpw(u.email,p||"");if(h!=u.hash)return authNote("Password errata.");
-sessSet(u.email);authHide();render();return""}
-async function auSetPw(e,p,p2){var u=findUser(e);
-if(!u)return authNote("Questo indirizzo non è autorizzato. Chiedi all\u2019amministratore di aggiungerti.");
-if(u.hash)return authNote("La password è già stata creata: accedi dalla schermata principale.");
-if((p||"").length<6)return authNote("La password deve avere almeno 6 caratteri.");
-if(p!=p2)return authNote("Le due password non coincidono.");
-u.hash=await hpw(u.email,p);u.reset=0;save();sessSet(u.email);authHide();render();return""}
-function auForgot(e){var u=findUser(e);if(u){u.reset=1;save()}
-AMODE="login";return authNote("","Se l\u2019indirizzo è autorizzato, l\u2019amministratore riceverà la richiesta di recupero.")}
-function auLogout(){sessSet("");AMODE="login";AERR="";AOK="";authPaint()}
-function acctOpen(){if(!curUser())return;AMODE="acct";AERR="";AOK="";authPaint();try{scrollTo(0,0)}catch(e){}}
-async function auChPw(o,p,p2){var u=curUser();if(!u)return authNote("Accesso non valido.");
-if((await hpw(u.email,o||""))!=u.hash)return authNote("La password attuale non è corretta.");
-if((p||"").length<6)return authNote("La nuova password deve avere almeno 6 caratteri.");
-if(p!=p2)return authNote("Le due password non coincidono.");
-u.hash=await hpw(u.email,p);save();return authNote("","Password aggiornata.")}
-function auAdd(e,n){var me=curUser();if(!me||!me.admin)return authNote("Solo l\u2019amministratore può autorizzare nuovi allenatori.");
-e=(e||"").trim().toLowerCase();n=(n||"").trim();
-if(!emOk(e))return authNote("Inserisci un indirizzo email valido.");
-if(findUser(e))return authNote("Questo indirizzo è già autorizzato.");
-S.users.push({id:uid(),email:e,nome:n,hash:"",admin:0,reset:0});save();return authNote("")}
-function auDel(id){var me=curUser();if(!me||!me.admin||id==me.id)return authNote("Operazione non consentita.");
-S.users=S.users.filter(function(u){return u.id!=id});save();return authNote("")}
-function auTogAdm(id){var me=curUser();if(!me||!me.admin||id==me.id)return authNote("Operazione non consentita.");
-var u=S.users.find(function(x){return x.id==id});if(!u)return authNote("Utente non trovato.");
-u.admin=u.admin?0:1;save();return authNote("")}
-async function auAdminPw(id,p){var me=curUser();if(!me||!me.admin)return authNote("Solo l\u2019amministratore può reimpostare le password.");
-var u=S.users.find(function(x){return x.id==id});if(!u)return authNote("Utente non trovato.");
-if((p||"").length<6)return authNote("La password deve avere almeno 6 caratteri.");
-u.hash=await hpw(u.email,p);u.reset=0;save();return authNote("","Password reimpostata per "+u.email+": comunicala all\u2019allenatore.")}
-function boot(){if(!authGate())render()}
+var h='<div class="card"><div class="row sp"><div><b>'+esc(u.nome||u.email)+'</b><div class="mu">'+esc(u.email)+'</div></div><button class="sec" id="acctclose" aria-label="Chiudi account">✕</button></div></div>';
+if(u.admin){var pending=AREQUESTS.filter(function(x){return x.status=="pending"});h+='<div class="card"><div class="row sp"><b>Richieste allenatori</b><span class="tag p">'+pending.length+' in attesa</span></div><button class="sec" id="arefresh" style="margin-top:10px">Aggiorna richieste</button></div>';
+h+=requestSection('In attesa',pending,u);
+h+=requestSection('Storico richieste',AREQUESTS.filter(function(x){return x.status!="pending"&&x.id!=u.id}),u)}
+h+='<div class="card"><b>Cambia password</b><label class="l" for="au_old">Password attuale</label><input id="au_old" type="password" autocomplete="current-password"><label class="l" for="au_pw">Nuova password (min. 6 caratteri)</label><input id="au_pw" type="password" autocomplete="new-password"><label class="l" for="au_pw2">Ripeti nuova password</label><input id="au_pw2" type="password" autocomplete="new-password"><div style="margin-top:12px"><button class="sec" id="apwch">Cambia password</button></div></div><button class="pri" id="alogout">Esci</button>';return h}
+function requestSection(title,rows,u){var h='<section style="margin:16px 0"><h3>'+title+'</h3>';if(!rows.length)return h+'<p class="mu">Nessuna richiesta.</p></section>';
+return h+rows.map(function(x){var h='<div class="card"><div class="row sp"><b>'+esc((x.first_name+' '+x.last_name).trim()||x.email)+'</b><span class="tag'+(x.status=="pending"?' p':'')+'">'+esc(authStatus(x.status))+'</span></div><div class="mu" style="overflow-wrap:anywhere">'+esc(x.email)+'</div><div class="mu" style="font-size:13px;margin:6px 0">Richiesta: '+new Date(x.requested_at).toLocaleString('it-IT')+(x.decided_at?'<br>Decisione: '+new Date(x.decided_at).toLocaleString('it-IT'):'')+'</div><div class="row" style="flex-wrap:wrap">';
+if(x.status!="approved")h+='<button class="pri" data-audec="'+esc(x.id)+'" data-decision="approved">Approva</button>';
+if(x.status=="pending")h+='<button class="sec dg" data-audec="'+esc(x.id)+'" data-decision="rejected">Rifiuta</button>';
+if(x.status=="approved")h+='<button class="sec dg" data-audec="'+esc(x.id)+'" data-decision="revoked">Revoca accesso</button>';
+h+='</div>';if(x.reset_requested)h+='<div style="margin-top:10px"><span class="tag p">Recupero password richiesto</span><label class="l" for="aupw_'+esc(x.id)+'">Password temporanea</label><input id="aupw_'+esc(x.id)+'" type="password" autocomplete="new-password"><button class="sec" data-aupw="'+esc(x.id)+'" style="margin-top:8px">Imposta password</button></div>';return h+'</div>'}).join('')+'</section>'}
+async function auRegister(e,n,l,p,p2){e=e.trim().toLowerCase();if(!emOk(e))return authNote("Inserisci un indirizzo email valido.");if(!n.trim()||!l.trim())return authNote("Inserisci nome e cognome.");if(p.length<6)return authNote("La password deve avere almeno 6 caratteri.");if(p!=p2)return authNote("Le due password non coincidono.");return authRun(async function(){var b=cloud();if(!b)throw Error('Apri il registro dalla pagina principale.');var r=await b.register(e,n.trim(),l.trim(),p);AMODE="login";authNote('',r.confirmed?'Richiesta inviata. Accedi per verificare lo stato.':'Richiesta inviata. Conferma la tua email dal messaggio ricevuto; poi accedi per verificare lo stato. L’accesso richiede l’approvazione del responsabile.')})}
+async function auLogin(e,p){return authRun(async function(){var b=cloud();if(!b)throw Error('Apri il registro dalla pagina principale.');authApply(await b.login(e.trim().toLowerCase(),p));AERR="";AOK="";if(curUser()){authHide();render()}else{AMODE="pending";authPaint()}})}
+async function auRefresh(){return authRun(async function(){authApply(await cloud().snapshot());AERR="";AOK="";if(AMODE=="acct"&&curUser())authPaint();else if(curUser()){authHide();render()}else{AMODE=AUSER?"pending":"login";authPaint()}})}
+async function auLogout(){return authRun(async function(){await cloud().logout();AUSER=null;AREQUESTS=[];$("main").innerHTML="";AMODE="login";authNote('')})}
+function acctOpen(){if(!curUser())return;AMODE="acct";AERR="";AOK="";authPaint();auRefresh()}
+async function auDecide(id,decision){return authRun(async function(){authApply(await cloud().decide(id,decision));authNote('','Richiesta aggiornata.')})}
+async function auForgot(e){if(!emOk(e.trim()))return authNote('Inserisci un indirizzo email valido.');return authRun(async function(){await cloud().forgot(e.trim());AMODE="login";authNote('','Se l’indirizzo è registrato, il responsabile vedrà la richiesta di recupero nell’app.')})}
+async function auChPw(o,p,p2){if(p.length<6)return authNote('La password deve avere almeno 6 caratteri.');if(p!=p2)return authNote('Le due password non coincidono.');return authRun(async function(){await cloud().changePassword(o,p);authNote('','Password aggiornata.')})}
+async function auAdminPw(id,p){if(p.length<6)return authNote('La password deve avere almeno 6 caratteri.');return authRun(async function(){authApply(await cloud().resetPassword(id,p));authNote('','Password reimpostata: comunicala all’allenatore.')})}
+async function boot(){AMODE="loading";authPaint();var b=cloud();if(!b){AMODE="login";authNote('Apri il registro dalla pagina principale.');return}try{authApply(await b.snapshot());AMODE=AUSER&&!curUser()?"pending":"login";if(!authGate())render()}catch(e){AMODE="login";authNote('Impossibile verificare l’accesso. Riprova.')}}
+setInterval(function(){if(cloud()&&AUSER&&!ABUSY){cloud().snapshot().then(function(v){var was=curUser();authApply(v);if(!curUser()){if(was)$("main").innerHTML="";AMODE=AUSER?"pending":"login";authPaint()}else if(AMODE=="acct"){var inputs=Array.from(document.querySelectorAll('#auth input')).some(function(x){return x.value});if(!inputs)authPaint()}else if(!was){authHide();render()}}).catch(function(){})}},30000);
 boot();
 </script>
 </body>
