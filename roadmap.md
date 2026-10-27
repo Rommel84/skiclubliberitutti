@@ -1,0 +1,3 @@
+- [ ] Collegare registrazioni condivise e approvazione riservata al proprietario.
+- [ ] Sostituire whitelist con richieste in attesa e storico.
+- [ ] Verificare controlli di accesso e flusso richieste.
