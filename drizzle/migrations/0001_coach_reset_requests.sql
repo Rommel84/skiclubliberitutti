@@ -1,0 +1,4 @@
+CREATE FUNCTION public.request_coach_password_reset(coach_email text) RETURNS void LANGUAGE sql SECURITY DEFINER SET search_path=public AS $$ UPDATE public.profiles SET reset_requested=true WHERE email=lower(trim(coach_email)) $$;
+REVOKE ALL ON FUNCTION public.request_coach_password_reset(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.request_coach_password_reset(text) TO anon, authenticated;
+CREATE OR REPLACE FUNCTION public.create_coach_profile() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ BEGIN INSERT INTO public.profiles(id,email,first_name,last_name,status) VALUES(NEW.id,lower(NEW.email),left(coalesce(NEW.raw_user_meta_data->>'first_name',''),100),left(coalesce(NEW.raw_user_meta_data->>'last_name',''),100),CASE WHEN public.has_role(NEW.id,'admin') THEN 'approved' ELSE 'pending' END); RETURN NEW; END $$;
