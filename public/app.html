@@ -413,7 +413,7 @@ function cloudPush(){if(!CREADY)return;CPEND=true;clearTimeout(CPT);CPT=setTimeo
 function editing(){var a=document.activeElement;return a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)&&a.type!="checkbox"}
 function cloudApply(d){S=Object.assign({ses:[],ath:[],rif:{},gare:[],crono:{}},d);try{localStorage.setItem("lt_v1",JSON.stringify(S))}catch(e){}try{seedAth();mig();mig2()}catch(e){}}
 function cloudPull(first){return sbf("register_state?id=eq.1&select=version"+(first?",data":"")).then(function(r){var row=r[0];
-if(first){CREADY=true;if(!row||!row.data||!Array.isArray(row.data.ses)){cloudPush();return}CV=row.version;cloudApply(row.data);render();return}
+if(first){CREADY=true;if(!row||!row.data||!Array.isArray(row.data.ses)){cloudPush();return}CV=row.version;var L=S,d=row.data,add=0;["ses","ath","gare"].forEach(function(k){var have={};(d[k]=d[k]||[]).forEach(function(x){have[x.id]=1});(L[k]||[]).forEach(function(x){if(x&&!have[x.id]){d[k].push(x);add++}})});["rif","crono"].forEach(function(k){d[k]=d[k]||{};Object.keys(L[k]||{}).forEach(function(i){if(!d[k][i]){d[k][i]=L[k][i];add++}})});cloudApply(d);if(add)cloudPush();render();return}
 if(row&&row.version>CV&&!CPEND&&!editing()){return sbf("register_state?id=eq.1&select=version,data").then(function(r2){if(r2[0]&&!CPEND){CV=r2[0].version;cloudApply(r2[0].data);render()}})}}).catch(function(){if(first){CREADY=true;CSTAT="offline"}})}
 function cloudLoadBk(){sbf("register_backups?select=id,created_at,data&order=created_at.desc&limit=8").then(function(r){CBK=r;if($("main").innerHTML.indexOf("cbk-list")>=0)render()}).catch(function(){CBK=[]})}
 function cbkView(){if(CBK===null){cloudLoadBk();return '<div class="card"><b>🗓️ Backup automatici</b><div class="mu" id="cbk-list">Caricamento…</div></div>'}
