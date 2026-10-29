@@ -50,6 +50,48 @@ export type Database = {
         }
         Relationships: []
       }
+      register_backups: {
+        Row: {
+          created_at: string
+          data: Json
+          emailed_at: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          data: Json
+          emailed_at?: string | null
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          emailed_at?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      register_state: {
+        Row: {
+          data: Json
+          id: number
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          data?: Json
+          id?: number
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          data?: Json
+          id?: number
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -84,11 +126,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      make_register_backup: { Args: never; Returns: string }
       request_coach_password_reset: {
         Args: { coach_email: string }
         Returns: undefined
       }
       request_coach_reset: { Args: never; Returns: undefined }
+      save_register: { Args: { new_data: Json }; Returns: number }
     }
     Enums: {
       app_role: "admin" | "coach"

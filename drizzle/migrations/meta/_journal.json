@@ -15,6 +15,20 @@
       "when": 1793080758773,
       "tag": "0001_coach_reset_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793291214959,
+      "tag": "0002_shared_register_sync",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793291232764,
+      "tag": "0003_enable_pg_cron",
+      "breakpoints": true
     }
   ]
 }

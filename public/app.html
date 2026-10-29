@@ -137,7 +137,7 @@ var SEED={"Super Baby":[["Loforte Leonardo",2019],["Maurino Bianca",2019],["Immo
 try{var r=localStorage.getItem("lt_v1");if(r)S=JSON.parse(r)}catch(e){}
 function seedAth(){if(S.seeded)return;var have={};S.ath.forEach(function(a){have[a.cat+"|"+a.nome.toLowerCase()]=1});Object.keys(SEED).forEach(function(c){SEED[c].forEach(function(x,i){if(!have[c+"|"+x[0].toLowerCase()])S.ath.push({id:"s"+c.replace(/\W/g,"")+i,nome:x[0],cat:c,anno:x[1]})})});S.seeded=1;save()}
 var OPEN={};
-function save(){try{localStorage.setItem("lt_v1",JSON.stringify(S));return true}catch(e){return false}}
+function save(){var ok=true;try{localStorage.setItem("lt_v1",JSON.stringify(S))}catch(e){ok=false}cloudPush();return ok}
 var NOTE="";
 seedAth();mig();mig2();
 function iso(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
@@ -184,7 +184,7 @@ function bkPack(){return {app:"liberi-tutti-registro",v:1,date:iso(new Date()),d
 function bkView(){var dd=S.bkd?S.bkd.split("-").reverse().join("/"):"mai";
 var h='<div class="card" style="margin-top:12px"><b>💾 Backup completo</b><div class="mu" style="margin:4px 0 10px">Salva in un file tutti i dati: sessioni, atleti, rifacimento sci, gare, crono e allegati. Ultimo backup: <b>'+dd+'</b></div><button type="button" class="pri" id="bkdl">⬇️ Scarica backup</button>'+(BKM?'<div style="margin-top:8px;color:var(--ok)">'+esc(BKM)+'</div>':"");
 if(!DL)h+='<div class="mu" style="margin-top:10px;font-size:13px">Il download diretto funziona solo dalla pagina pubblicata. Qui puoi copiare il testo del backup e incollarlo in un file di testo:</div><textarea rows="4" readonly onclick="this.select()">'+esc(JSON.stringify(bkPack()))+'</textarea>';
-h+='</div><div class="card"><b>♻️ Ripristina da backup</b><div class="mu" style="margin:4px 0 8px">Se hai perso i dati, carica il file di backup (.json).</div><input type="file" accept=".json,application/json" data-bk="1">';
+h+='</div>'+cbkView()+'<div class="card"><b>♻️ Ripristina da backup</b><div class="mu" style="margin:4px 0 8px">Se hai perso i dati, carica il file di backup (.json).</div><input type="file" accept=".json,application/json" data-bk="1">';
 if(BK&&BK.err)h+='<div style="margin-top:8px;color:var(--dg)">'+esc(BK.err)+'</div>';
 if(BK&&BK.o){var o=BK.o.data;h+='<div style="margin-top:10px"><b>Backup del '+esc((BK.o.date||"").split("-").reverse().join("/"))+'</b><div class="mu">'+o.ses.length+' sessioni · '+o.ath.length+' atleti · '+(o.gare||[]).length+' gare · '+Object.keys(o.crono||{}).length+' giornate di crono</div></div><div class="row" style="margin-top:10px;flex-wrap:wrap"><button type="button" class="pri" id="bkrep">Sostituisci tutti i dati</button><button type="button" class="sec" id="bkmrg">Unisci ai dati attuali</button><button type="button" class="sec" id="bkcancel">Annulla</button></div><div class="mu" style="font-size:12px;margin-top:6px">Sostituisci cancella i dati di ora e mette quelli del file. Unisci aggiunge solo quello che manca. In dubbio, scarica prima un backup dei dati attuali.</div>'}
 return h+'</div>'}
@@ -357,6 +357,7 @@ if(t.id=="bkdl"){BKM="";return bkSave()}
 if(t.id=="bkrep"){return bkApply(false)}
 if(t.id=="bkmrg"){return bkApply(true)}
 if(t.id=="bkcancel"){BK=null;return render()}
+if(t.dataset&&t.dataset.cbk){var cb=(CBK||[]).find(function(x){return x.id==t.dataset.cbk});if(cb){BKM="";BK={o:{date:cb.created_at.slice(0,10),data:cb.data}};render();try{scrollTo(0,0)}catch(e){}}return}
 if(d.v){view=d.v;return render()}
 if(d.rm){REG.mode=d.rm;GF=null;return render()}
 if(d.m){cur=new Date(cur.getFullYear(),cur.getMonth()+ +d.m,1);return render()}
@@ -404,8 +405,26 @@ if(ds.rf){GF=null;REG[ds.rf]=tg.value;if(ds.rf=="cat")REG.ath="";return render()
 if(ds.ck){sync();var a=ds.a;F.det[a]=F.det[a]||{};F.det[a][ds.ck]=tg.checked;return form()}
 if(ds.cf){var fi=tg.files[0];if(!fi)return;sync();var fa=ds.cf,fk=ds.cfk;if(fi.size>1000000){F.cerr=fk+fa;return form()}var rd=new FileReader();rd.onload=function(){F.det[fa]=F.det[fa]||{};F.det[fa][fk]={name:fi.name,type:fi.type,data:rd.result};F.cerr="";form()};rd.readAsDataURL(fi);return}
 var ar=e.target.dataset&&e.target.dataset.ar;if(ar&&e.target.value){var a=S.ath.find(function(x){return x.id==ar});a.cat=e.target.value;save();return render()}var p=e.target.dataset&&e.target.dataset.p;if(p){sync();var i=F.presenti.indexOf(p);e.target.checked?(i<0&&F.presenti.push(p)):(i>=0&&F.presenti.splice(i,1));form()}});
+// ===== Sincronizzazione automatica condivisa =====
+var SB_URL="https://c--710b0fe8-ab30-4455-beb0-898edb182078-prod.lovable.cloud",SB_KEY="sb_publishable_0Rla_u3ap-kqBSB369xqaA_nyt708zN";
+var CV=0,CREADY=false,CPT=null,CPEND=false,CBK=null,CSTAT="";
+function sbf(path,opt){opt=opt||{};opt.headers=Object.assign({apikey:SB_KEY,"Content-Type":"application/json"},opt.headers||{});return fetch(SB_URL+"/rest/v1/"+path,opt).then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json()})}
+function cloudPush(){if(!CREADY)return;CPEND=true;clearTimeout(CPT);CPT=setTimeout(function(){var body=JSON.stringify({new_data:S});sbf("rpc/save_register",{method:"POST",body:body}).then(function(v){CV=v;CPEND=false;CSTAT=""}).catch(function(){CSTAT="offline";CPT=setTimeout(cloudPush,8000)})},1200)}
+function editing(){var a=document.activeElement;return a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)&&a.type!="checkbox"}
+function cloudApply(d){S=Object.assign({ses:[],ath:[],rif:{},gare:[],crono:{}},d);try{localStorage.setItem("lt_v1",JSON.stringify(S))}catch(e){}try{seedAth();mig();mig2()}catch(e){}}
+function cloudPull(first){return sbf("register_state?id=eq.1&select=version"+(first?",data":"")).then(function(r){var row=r[0];
+if(first){CREADY=true;if(!row||!row.data||!Array.isArray(row.data.ses)){cloudPush();return}CV=row.version;var L=S,d=row.data,add=0;["ses","ath","gare"].forEach(function(k){var have={};(d[k]=d[k]||[]).forEach(function(x){have[x.id]=1});(L[k]||[]).forEach(function(x){if(x&&!have[x.id]){d[k].push(x);add++}})});["rif","crono"].forEach(function(k){d[k]=d[k]||{};Object.keys(L[k]||{}).forEach(function(i){if(!d[k][i]){d[k][i]=L[k][i];add++}})});cloudApply(d);if(add)cloudPush();render();return}
+if(row&&row.version>CV&&!CPEND&&!editing()){return sbf("register_state?id=eq.1&select=version,data").then(function(r2){if(r2[0]&&!CPEND){CV=r2[0].version;cloudApply(r2[0].data);render()}})}}).catch(function(){if(first){CREADY=true;CSTAT="offline"}})}
+function cloudLoadBk(){sbf("register_backups?select=id,created_at,data&order=created_at.desc&limit=8").then(function(r){CBK=r;if($("main").innerHTML.indexOf("cbk-list")>=0)render()}).catch(function(){CBK=[]})}
+function cbkView(){if(CBK===null){cloudLoadBk();return '<div class="card"><b>🗓️ Backup automatici</b><div class="mu" id="cbk-list">Caricamento…</div></div>'}
+var h='<div class="card"><b>🗓️ Backup automatici</b><div class="mu" id="cbk-list" style="margin:4px 0 8px">Ogni domenica alle 21:00 viene salvata una copia di tutti i dati.</div>';
+if(!CBK.length)h+='<div class="mu">Nessun backup automatico ancora.</div>';
+CBK.forEach(function(b){var d=new Date(b.created_at);h+='<div class="row" style="justify-content:space-between;margin-top:6px"><span>'+d.toLocaleDateString("it-IT")+' '+d.toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})+' · '+((b.data&&b.data.ses)||[]).length+' sessioni</span><button type="button" class="sec" data-cbk="'+b.id+'">Ripristina</button></div>'});
+return h+'</div>'}
+setInterval(function(){if(CREADY)cloudPull(false)},10000);
+document.addEventListener("visibilitychange",function(){if(!document.hidden&&CREADY)cloudPull(false)});
 // Accesso libero: il registro si apre senza account.
-render();
+render();cloudPull(true);
 </script>
 </body>
 </html>

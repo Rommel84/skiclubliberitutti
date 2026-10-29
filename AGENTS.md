@@ -11,3 +11,5 @@
 
 - The app itself is the self-contained `public/app.html` (vanilla JS), embedded by `src/routes/index.tsx` in an iframe; app features are edited directly in that file.
 - The register opens directly without authentication or a cloud bridge; keep existing cloud account records and permissions untouched because public access applies only to the locally persisted register.
+- Register data is shared via the single-row `register_state` table: app.html writes through the `save_register` RPC (debounced) and polls version every 10s — keeps all devices in sync without accounts.
+- Weekly backups are snapshots in `register_backups` created by a pg_cron job (Sunday 20:00 UTC) — restorable from the app's backup screen.
