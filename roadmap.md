@@ -1,5 +1,6 @@
 - [x] Disattivare login, richieste e schermata account; aprire direttamente il registro.
 - [x] Verificare apertura e modifica del registro senza account.
-- [ ] Salvataggio automatico e sincronizzazione dati su tutti i dispositivi.
-- [ ] Backup automatico domenica sera con email a skiclubliberitutti@gmail.com (serve dominio email).
-- [ ] Caricamento di un backup per ripristinare i dati.
+- [x] Salvataggio automatico e sincronizzazione dati su tutti i dispositivi.
+- [x] Backup automatico domenica sera salvato nell'app.
+- [ ] Email del backup a skiclubliberitutti@gmail.com — in attesa della configurazione del dominio email.
+- [x] Caricamento di un backup (file o backup automatici) per ripristinare i dati.
