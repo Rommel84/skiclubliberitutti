@@ -1,6 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from 'react';
-import { coachBridge } from '@/lib/coach-access';
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -17,14 +15,6 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const [ready, setReady] = useState(false);
-  useEffect(() => {
-    const host = window as unknown as { LTCloud?: typeof coachBridge };
-    host.LTCloud = coachBridge;
-    setReady(true);
-    return () => { delete host.LTCloud; };
-  }, []);
-  if (!ready) return null;
   return (
     <iframe
       src="/app.html"

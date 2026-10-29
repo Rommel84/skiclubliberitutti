@@ -1,3 +1,2 @@
-- [ ] Collegare registrazioni condivise e approvazione riservata al proprietario.
-- [ ] Sostituire whitelist con richieste in attesa e storico.
-- [ ] Verificare controlli di accesso e flusso richieste.
+- [x] Disattivare login, richieste e schermata account; aprire direttamente il registro.
+- [x] Verificare apertura e modifica del registro senza account.
