@@ -1,2 +1,2 @@
-- [ ] Disattivare login, richieste e schermata account; aprire direttamente il registro.
-- [ ] Verificare apertura e modifica del registro senza account.
+- [x] Disattivare login, richieste e schermata account; aprire direttamente il registro.
+- [x] Verificare apertura e modifica del registro senza account.
