@@ -10,4 +10,4 @@
 <!-- LOVABLE:END -->
 
 - The app itself is the self-contained `public/app.html` (vanilla JS), embedded by `src/routes/index.tsx` in an iframe; app features are edited directly in that file.
-- Coach authentication is fully client-side inside `public/app.html`: whitelisted users live in `S.users` (persisted in the `lt_v1` localStorage blob), the session is the `lt_session` localStorage key, and password reset is admin-managed (no email is ever sent).
+- The register opens directly without authentication or a cloud bridge; keep existing cloud account records and permissions untouched because public access applies only to the locally persisted register.
