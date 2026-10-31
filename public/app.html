@@ -179,12 +179,15 @@ var h='<div style="margin-top:12px"><button type="button" class="pri" id="gnew">
 if(up.length)h+='<h3 style="margin:14px 2px 0">Prossime gare</h3>'+up.map(gc).join("");
 if(pa.length)h+='<h3 style="margin:14px 2px 0">Passate</h3>'+pa.map(gc).join("");
 if(!up.length&&!pa.length&&!GF)h+='<div class="card mu">Nessuna gara in calendario per '+esc(REG.cat)+'.</div>';return h}
-var BK=null,BKM="",BKE="",BKF="all",BKBUSY=false;
+var BK=null,BKM="",BKE="",BKF="all",BKBUSY=false,BKPIN="2525",BKOK=false,BKPE="";
+try{BKOK=sessionStorage.getItem("lt_bkok")=="1"}catch(e){}
+function bkLock(){return '<div class="card" style="margin-top:12px;text-align:center"><div style="font-size:30px">🔒</div><b>Area riservata</b><div class="mu" style="margin:4px 0 10px">Inserisci il PIN per gestire i backup.</div><input id="bkpin" type="password" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="PIN" style="max-width:160px;text-align:center;font-size:20px;letter-spacing:.3em">'+(BKPE?'<div style="margin-top:8px;color:var(--dg)">'+esc(BKPE)+'</div>':"")+'<div style="margin-top:10px"><button type="button" class="pri" id="bkpinok">Entra</button></div></div>'}
+function bkUnlock(){var i=$("bkpin");if(!i)return;if(i.value.trim()==BKPIN){BKOK=true;BKPE="";try{sessionStorage.setItem("lt_bkok","1")}catch(e){}CBK=null;render()}else{BKPE="PIN errato.";render();setTimeout(function(){var j=$("bkpin");if(j)j.focus()},50)}}
 function bkPack(d,date){return {app:"liberi-tutti-registro",v:1,date:date||iso(new Date()),data:d||S}}
 function bkDate(x){var d=new Date(x);return d.toLocaleDateString("it-IT")+" "+d.toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})}
 var BKK={auto:["Automatico",""],manual:["Manuale","p"],pre_restore:["Prima del ripristino","p"]};
 function bkView(){var dd=S.bkd?S.bkd.split("-").reverse().join("/"):"mai",h='';
-h+='<div class="card" style="margin-top:12px"><b>🛠️ Admin backup</b><div class="mu" style="margin-top:4px">Crea copie dei dati, scaricale sul dispositivo e ripristinale quando serve. I backup salvati qui sono condivisi tra tutti i dispositivi.</div>'+(BKM?'<div style="margin-top:8px;color:var(--ok)">'+esc(BKM)+'</div>':"")+(BKE?'<div style="margin-top:8px;color:var(--dg)">'+esc(BKE)+'</div>':"")+'</div>';
+h+='<div class="card" style="margin-top:12px"><div class="row sp"><b>🛠️ Admin backup</b><button type="button" class="sec" id="bklock" style="padding:5px 10px;font-size:13px">🔒 Esci</button></div><div class="mu" style="margin-top:4px">Crea copie dei dati, scaricale sul dispositivo e ripristinale quando serve. I backup salvati qui sono condivisi tra tutti i dispositivi.</div>'+(BKM?'<div style="margin-top:8px;color:var(--ok)">'+esc(BKM)+'</div>':"")+(BKE?'<div style="margin-top:8px;color:var(--dg)">'+esc(BKE)+'</div>':"")+'</div>';
 if(BK&&BK.o){var o=BK.o.data;h+='<div class="card" style="border-color:var(--pr)"><b>♻️ Ripristino: backup del '+esc(BK.o.when||(BK.o.date||"").split("-").reverse().join("/"))+'</b><div class="mu" style="margin-top:4px">'+o.ses.length+' sessioni · '+o.ath.length+' atleti · '+(o.gare||[]).length+' gare · '+Object.keys(o.crono||{}).length+' giornate di crono</div><div class="row" style="margin-top:10px;flex-wrap:wrap"><button type="button" class="pri" id="bkrep"'+(BKBUSY?" disabled":"")+'>Sostituisci tutti i dati</button><button type="button" class="sec" id="bkmrg"'+(BKBUSY?" disabled":"")+'>Unisci ai dati attuali</button><button type="button" class="sec" id="bkcancel">Annulla</button></div><div class="mu" style="font-size:12px;margin-top:6px">Sostituisci cancella i dati di ora e mette quelli del backup. Unisci aggiunge solo quello che manca. Prima di procedere viene salvata in automatico una copia dei dati attuali ("Prima del ripristino").</div></div>'}
 h+='<div class="card"><b>➕ Nuovo backup manuale</b><div class="mu" style="margin:4px 0 6px">Salva adesso una copia di tutti i dati: sessioni, atleti, rifacimento sci, gare, crono e allegati.</div><label class="l">Nota (facoltativa)</label><input id="bknote" maxlength="80" placeholder="es. fine stagione, prima della pulizia atleti"><div class="row" style="margin-top:10px;flex-wrap:wrap"><button type="button" class="pri" id="bkmk"'+(BKBUSY?" disabled":"")+'>'+(BKBUSY?"Attendi…":"💾 Crea backup ora")+'</button><button type="button" class="sec" id="bkdl">⬇️ Scarica copia sul dispositivo</button></div><div class="mu" style="font-size:12px;margin-top:6px">Ultima copia scaricata su questo dispositivo: '+dd+'</div></div>';
 h+=cbkView();
@@ -298,7 +301,7 @@ else if(REG.cat){tt="Presenti / assenti";var tot=S.ath.filter(function(a){return
 else ses.forEach(function(s){PR[s.cat]=(PR[s.cat]||0)+s.presenti.length});
 if(at&&!base.length)h+='<div class="card mu">Questo atleta non risulta presente in nessuna sessione: restano solo le presenze.</div>';
 return h+pie(tt,PR)+pie("Attività",A)+(REG.cat?"":pie("Sessioni per categoria",CT))+pie("Località",LC)+pie("Meteo",M)+pie("Neve",N)+pie("Pali · disciplina",PD)+pie("Pali · pista",PI)+pie("Pali · crono",CR)+pie("Campo libero · tipo di sci",CL)+pie("Gare · tipo",GT)+pie("Gare · località",GL)+pie("Fuori pista",FP)+pie("Snow park · elementi",SE)+pie("Snow park · livello",SL)+pie("Speciale",SP)+pie("Rifacimento sci",RF)+pie("Video",VD)}
-function regView(){var h=regCtl();if(REG.mode=="ana")return h+ana();if(REG.mode=="ath")return h;if(REG.mode=="bk")return h+bkView();if(REG.mode=="gare")return h+gareView();
+function regView(){var h=regCtl();if(REG.mode=="ana")return h+ana();if(REG.mode=="ath")return h;if(REG.mode=="bk"){if(!BKOK){setTimeout(function(){var j=$("bkpin");if(j)j.focus()},50);return h+bkLock()}return h+bkView()}if(REG.mode=="gare")return h+gareView();
 var l=S.ses.filter(function(s){return !REG.cat||sesIn(s.cat,REG.cat)}).sort(function(a,b){return (b.data+(b.ora||""))<(a.data+(a.ora||""))?-1:1});
 return h+(l.length?l.map(card).join(""):'<div class="card mu">Nessuna sessione.</div>')+'<div class="row" style="margin-top:10px"><button class="sec" id="exp">⬇️ Esporta tabelle (CSV)</button></div>'}
 function render(){nav();var h=NOTE?'<div class="card" style="color:var(--dg)">'+NOTE+'</div>':"";NOTE="";
@@ -381,6 +384,8 @@ if(d.bkd){return bkDown(d.bkd)}
 if(d.bkx){return bkDel(d.bkx)}
 if(d.bkf){BKF=d.bkf;return render()}
 if(t.id=="bkmk"){return bkMake()}
+if(t.id=="bkpinok"){return bkUnlock()}
+if(t.id=="bklock"){BKOK=false;BK=null;BKM="";BKE="";try{sessionStorage.removeItem("lt_bkok")}catch(e){}return render()}
 if(t.id=="bkrel"){CBK=null;return render()}
 if(d.v){view=d.v;return render()}
 if(d.rm){if(d.rm=="bk"&&REG.mode!="bk")CBK=null;REG.mode=d.rm;GF=null;return render()}
@@ -418,6 +423,7 @@ if(t.id=="exp"){var A=csv([["ID_Sessione","Data","Categoria","Localita","Tipo_At
 var B=csv([["ID_Atleta","Nome","Categoria"]].concat(S.ath.map(function(a){return [a.id,a.nome,a.cat]})));
 var C=csv([["ID_Sessione","ID_Atleta","Presente"]].concat([].concat.apply([],S.ses.map(function(s){return S.ath.filter(function(a){return inC(s.cat,a.cat)}).map(function(a){return [s.id,a.id,s.presenti.indexOf(a.id)>=0?"SI":"NO"]})}))));
 $("main").innerHTML='<div class="card"><b>Allenamenti</b><textarea rows="6">'+esc(A)+'</textarea><b>Atleti</b><textarea rows="5">'+esc(B)+'</textarea><b>Presenze (Sessione ↔ Atleta)</b><textarea rows="6">'+esc(C)+'</textarea><div class="mu">Seleziona il testo e copialo in Excel/Fogli.</div><button class="sec" data-v="reg" style="margin-top:8px">Indietro</button></div>'}});
+document.addEventListener("keydown",function(e){if(e.key=="Enter"&&e.target&&e.target.id=="bkpin"){e.preventDefault();bkUnlock()}});
 document.addEventListener("input",function(e){var ds=e.target.dataset||{};if(ds.ci){cq(ds.ci).t[+ds.cj]=e.target.value;save()}});
 document.addEventListener("toggle",function(e){var t=e.target;if(t.dataset&&t.dataset.cat)OPEN[t.dataset.cat]=t.open},true);
 document.addEventListener("change",function(e){var tg=e.target,ds=tg.dataset||{};
