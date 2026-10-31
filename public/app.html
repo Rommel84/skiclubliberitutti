@@ -179,20 +179,39 @@ var h='<div style="margin-top:12px"><button type="button" class="pri" id="gnew">
 if(up.length)h+='<h3 style="margin:14px 2px 0">Prossime gare</h3>'+up.map(gc).join("");
 if(pa.length)h+='<h3 style="margin:14px 2px 0">Passate</h3>'+pa.map(gc).join("");
 if(!up.length&&!pa.length&&!GF)h+='<div class="card mu">Nessuna gara in calendario per '+esc(REG.cat)+'.</div>';return h}
-var BK=null,BKM="";
-function bkPack(){return {app:"liberi-tutti-registro",v:1,date:iso(new Date()),data:S}}
-function bkView(){var dd=S.bkd?S.bkd.split("-").reverse().join("/"):"mai";
-var h='<div class="card" style="margin-top:12px"><b>💾 Backup completo</b><div class="mu" style="margin:4px 0 10px">Salva in un file tutti i dati: sessioni, atleti, rifacimento sci, gare, crono e allegati. Ultimo backup: <b>'+dd+'</b></div><button type="button" class="pri" id="bkdl">⬇️ Scarica backup</button>'+(BKM?'<div style="margin-top:8px;color:var(--ok)">'+esc(BKM)+'</div>':"");
-if(!DL)h+='<div class="mu" style="margin-top:10px;font-size:13px">Il download diretto funziona solo dalla pagina pubblicata. Qui puoi copiare il testo del backup e incollarlo in un file di testo:</div><textarea rows="4" readonly onclick="this.select()">'+esc(JSON.stringify(bkPack()))+'</textarea>';
-h+='</div>'+cbkView()+'<div class="card"><b>♻️ Ripristina da backup</b><div class="mu" style="margin:4px 0 8px">Se hai perso i dati, carica il file di backup (.json).</div><input type="file" accept=".json,application/json" data-bk="1">';
+var BK=null,BKM="",BKE="",BKF="all",BKBUSY=false;
+function bkPack(d,date){return {app:"liberi-tutti-registro",v:1,date:date||iso(new Date()),data:d||S}}
+function bkDate(x){var d=new Date(x);return d.toLocaleDateString("it-IT")+" "+d.toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})}
+var BKK={auto:["Automatico",""],manual:["Manuale","p"],pre_restore:["Prima del ripristino","p"]};
+function bkView(){var dd=S.bkd?S.bkd.split("-").reverse().join("/"):"mai",h='';
+h+='<div class="card" style="margin-top:12px"><b>🛠️ Admin backup</b><div class="mu" style="margin-top:4px">Crea copie dei dati, scaricale sul dispositivo e ripristinale quando serve. I backup salvati qui sono condivisi tra tutti i dispositivi.</div>'+(BKM?'<div style="margin-top:8px;color:var(--ok)">'+esc(BKM)+'</div>':"")+(BKE?'<div style="margin-top:8px;color:var(--dg)">'+esc(BKE)+'</div>':"")+'</div>';
+if(BK&&BK.o){var o=BK.o.data;h+='<div class="card" style="border-color:var(--pr)"><b>♻️ Ripristino: backup del '+esc(BK.o.when||(BK.o.date||"").split("-").reverse().join("/"))+'</b><div class="mu" style="margin-top:4px">'+o.ses.length+' sessioni · '+o.ath.length+' atleti · '+(o.gare||[]).length+' gare · '+Object.keys(o.crono||{}).length+' giornate di crono</div><div class="row" style="margin-top:10px;flex-wrap:wrap"><button type="button" class="pri" id="bkrep"'+(BKBUSY?" disabled":"")+'>Sostituisci tutti i dati</button><button type="button" class="sec" id="bkmrg"'+(BKBUSY?" disabled":"")+'>Unisci ai dati attuali</button><button type="button" class="sec" id="bkcancel">Annulla</button></div><div class="mu" style="font-size:12px;margin-top:6px">Sostituisci cancella i dati di ora e mette quelli del backup. Unisci aggiunge solo quello che manca. Prima di procedere viene salvata in automatico una copia dei dati attuali ("Prima del ripristino").</div></div>'}
+h+='<div class="card"><b>➕ Nuovo backup manuale</b><div class="mu" style="margin:4px 0 6px">Salva adesso una copia di tutti i dati: sessioni, atleti, rifacimento sci, gare, crono e allegati.</div><label class="l">Nota (facoltativa)</label><input id="bknote" maxlength="80" placeholder="es. fine stagione, prima della pulizia atleti"><div class="row" style="margin-top:10px;flex-wrap:wrap"><button type="button" class="pri" id="bkmk"'+(BKBUSY?" disabled":"")+'>'+(BKBUSY?"Attendi…":"💾 Crea backup ora")+'</button><button type="button" class="sec" id="bkdl">⬇️ Scarica copia sul dispositivo</button></div><div class="mu" style="font-size:12px;margin-top:6px">Ultima copia scaricata su questo dispositivo: '+dd+'</div></div>';
+h+=cbkView();
+h+='<div class="card"><b>📂 Ripristina da file</b><div class="mu" style="margin:4px 0 8px">Carica un file di backup (.json) scaricato in precedenza.</div><input type="file" accept=".json,application/json" data-bk="1">';
 if(BK&&BK.err)h+='<div style="margin-top:8px;color:var(--dg)">'+esc(BK.err)+'</div>';
-if(BK&&BK.o){var o=BK.o.data;h+='<div style="margin-top:10px"><b>Backup del '+esc((BK.o.date||"").split("-").reverse().join("/"))+'</b><div class="mu">'+o.ses.length+' sessioni · '+o.ath.length+' atleti · '+(o.gare||[]).length+' gare · '+Object.keys(o.crono||{}).length+' giornate di crono</div></div><div class="row" style="margin-top:10px;flex-wrap:wrap"><button type="button" class="pri" id="bkrep">Sostituisci tutti i dati</button><button type="button" class="sec" id="bkmrg">Unisci ai dati attuali</button><button type="button" class="sec" id="bkcancel">Annulla</button></div><div class="mu" style="font-size:12px;margin-top:6px">Sostituisci cancella i dati di ora e mette quelli del file. Unisci aggiunge solo quello che manca. In dubbio, scarica prima un backup dei dati attuali.</div>'}
 return h+'</div>'}
-function bkDone(m){BK=null;BKM=m;save();render()}
-function bkApply(merge){var o=BK.o.data;
+function bkDone(m){BK=null;BKM=m;BKE="";save();render()}
+function bkMsg(ok,err){BKBUSY=false;BKM=ok||"";BKE=err||"";render()}
+function bkApply(merge){if(BKBUSY||!BK||!BK.o)return;BKBUSY=true;BKM="";BKE="";render();
+var go=function(){BKBUSY=false;var o=BK.o.data;
 if(merge){["ses","ath","gare"].forEach(function(k){var have={};(S[k]=S[k]||[]).forEach(function(x){have[x.id]=1});(o[k]||[]).forEach(function(x){if(!have[x.id])S[k].push(x)})});["rif","crono"].forEach(function(k){S[k]=S[k]||{};Object.keys(o[k]||{}).forEach(function(i){if(!S[k][i])S[k][i]=o[k][i]})});bkDone("Dati uniti al backup.")}
-else{S=Object.assign({ses:[],ath:[],rif:{},gare:[],crono:{}},o);seedAth();mig();mig2();bkDone("Backup ripristinato.")}}
-function bkSave(){if(!DL)return;DL.save({filename:"backup-liberi-tutti-"+iso(new Date())+".json",data:new Blob([JSON.stringify(bkPack())],{type:"application/json"})}).then(function(){S.bkd=iso(new Date());bkDone("Backup salvato.")}).catch(function(e){if(!e||e.code!="declined"){BKM="";NOTE="Download non riuscito."}render()})}
+else{S=Object.assign({ses:[],ath:[],rif:{},gare:[],crono:{}},o);seedAth();mig();mig2();bkDone("Backup ripristinato.")}CBK=null};
+sbf("rpc/make_manual_backup",{method:"POST",body:JSON.stringify({note:merge?"Prima di unire un backup":"Prima di sostituire i dati",backup_kind:"pre_restore"})}).then(go).catch(function(){
+if(confirm("Non riesco a salvare una copia di sicurezza dei dati attuali (sei offline?). Vuoi procedere comunque con il ripristino?"))go();else bkMsg("","Ripristino annullato.")})}
+function bkFile(name,obj){var blob=new Blob([JSON.stringify(obj)],{type:"application/json"});
+if(DL)return DL.save({filename:name,data:blob});
+return new Promise(function(res,rej){try{var u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(u);a.remove()},1500);res()}catch(e){rej(e)}})}
+function bkFail(e){if(!e||e.code!="declined")bkMsg("","Download non riuscito.");else bkMsg()}
+function bkMake(){if(BKBUSY)return;var n=$("bknote"),note=n?n.value.trim():"";BKBUSY=true;BKM="";BKE="";render();
+var run=function(){sbf("rpc/make_manual_backup",{method:"POST",body:JSON.stringify({note:note||null,backup_kind:"manual"})}).then(function(){CBK=null;bkMsg("Backup creato"+(note?": "+note:"")+".")}).catch(function(e){bkMsg("","Backup non creato: "+(String(e&&e.message).indexOf("404")>=0?"la funzione non è ancora attiva sul database.":"controlla la connessione e riprova."))})};
+if(CPEND){clearTimeout(CPT);sbf("rpc/save_register",{method:"POST",body:JSON.stringify({new_data:S})}).then(function(v){CV=v;CPEND=false;run()}).catch(function(){bkMsg("","Backup non creato: controlla la connessione e riprova.")})}else run()}
+function bkGet(id){return sbf("register_backups?id=eq."+encodeURIComponent(id)+"&select=id,created_at,data").then(function(r){if(!r[0]||!r[0].data)throw new Error("vuoto");return r[0]})}
+function bkDown(id){BKM="";BKE="";bkGet(id).then(function(b){var c=(CBK||[]).find(function(x){return x.id==id})||{};return bkFile("backup-liberi-tutti-"+b.created_at.slice(0,10)+(c.kind&&c.kind!="auto"?"-"+c.kind.replace("_","-"):"")+".json",bkPack(b.data,b.created_at.slice(0,10))).then(function(){bkMsg("Backup del "+bkDate(b.created_at)+" scaricato.")})}).catch(bkFail)}
+function bkRestore(id){BKM="";BKE="";bkGet(id).then(function(b){if(!Array.isArray(b.data.ses)||!Array.isArray(b.data.ath))throw 0;BK={o:{date:b.created_at.slice(0,10),when:bkDate(b.created_at),data:b.data}};render();try{scrollTo(0,0)}catch(e){}}).catch(function(){bkMsg("","Impossibile aprire questo backup.")})}
+function bkDel(id){var c=(CBK||[]).find(function(x){return x.id==id});if(!c||c.kind=="auto")return;if(!confirm("Eliminare il backup del "+bkDate(c.created_at)+(c.label?" ("+c.label+")":"")+"? L'operazione non si può annullare."))return;
+sbf("rpc/delete_manual_backup",{method:"POST",body:JSON.stringify({backup_id:id})}).then(function(){CBK=CBK.filter(function(x){return x.id!=id});bkMsg("Backup eliminato.")}).catch(function(){bkMsg("","Backup non eliminato: riprova.")})}
+function bkSave(){bkFile("backup-liberi-tutti-"+iso(new Date())+".json",bkPack()).then(function(){S.bkd=iso(new Date());save();bkMsg("Copia scaricata sul dispositivo.")}).catch(bkFail)}
 function mig2(){if(S.rifg)return;S.ath.filter(function(a){return a.cat=="Giovani"}).forEach(function(a){var q=S.rif[a.id];if(!q)return;var o=[];q.o.forEach(function(x){x=x=="Slalom gara"?"Sci da archi":x;if(x!="Gigante gara"&&o.indexOf(x)<0)o.push(x)});if(o.length)q.o=o;else delete S.rif[a.id]});S.rifg=1;save()}
 var CRS={date:iso(new Date())};
 function cq(id){var k=CRS.date+"|"+REG.cat,c=S.crono[k]=S.crono[k]||{a:{}};return c.a[id]=c.a[id]||{p:0,t:["","","",""]}}
@@ -256,7 +275,7 @@ k.forEach(function(x,i){var len=o[x]/tot*C,c=PAL[i%PAL.length];svg+='<circle cx=
 svg+='</g><text x="60" y="65" text-anchor="middle" font-size="17" font-weight="700" fill="currentColor">'+tot+'</text></svg>';
 return '<div class="card"><b>'+esc(t)+'</b><div class="row" style="align-items:flex-start;margin-top:8px;gap:12px">'+svg+'<div style="flex:1;min-width:0">'+lg+'</div></div></div>'}
 function catSel(req){return '<label class="l">Categoria</label><select data-rf="cat"><option value="">'+(req?"Seleziona categoria…":"Tutte le categorie")+'</option>'+cats().map(function(c){return '<option'+(REG.cat==c?" selected":"")+'>'+esc(c)+'</option>'}).join("")+'</select>'}
-function regCtl(){var M=REG.mode,h='<div style="margin-top:6px">'+[["list","📋 Elenco attività"],["ana","📊 Analisi"],["ath","👥 Atleti"],["gare","🏁 Calendario gare"],["bk","💾 Backup"]].map(function(x){return '<button type="button" class="chip'+(M==x[0]?" on":"")+'" data-rm="'+x[0]+'">'+x[1]+'</button>'}).join("")+'</div>'+(M=="ath"||M=="bk"?"":catSel(M=="gare"));
+function regCtl(){var M=REG.mode,h='<div style="margin-top:6px">'+[["list","📋 Elenco attività"],["ana","📊 Analisi"],["ath","👥 Atleti"],["gare","🏁 Calendario gare"],["bk","🛠️ Admin backup"]].map(function(x){return '<button type="button" class="chip'+(M==x[0]?" on":"")+'" data-rm="'+x[0]+'">'+x[1]+'</button>'}).join("")+'</div>'+(M=="ath"||M=="bk"?"":catSel(M=="gare"));
 if(M=="ana"&&REG.cat)h+='<label class="l">Atleta</label><select data-rf="ath"><option value="">Tutti gli atleti</option>'+S.ath.filter(function(a){return inC(REG.cat,a.cat)}).sort(function(a,b){return a.nome<b.nome?-1:1}).map(function(a){return '<option value="'+a.id+'"'+(REG.ath==a.id?" selected":"")+'>'+esc(a.nome)+(catsOf(a).length>1?' ('+catsOf(a).join(' · ')+')':'')+'</option>'}).join("")+'</select>';return h}
 function ana(){var td=iso(new Date()),ses=S.ses.filter(function(s){return s.data<=td&&(!REG.cat||sesIn(s.cat,REG.cat))}),at=REG.ath?S.ath.find(function(a){return a.id==REG.ath}):null,base=at?ses.filter(function(s){return s.presenti.indexOf(at.id)>=0}):ses;
 var h='<div class="card" style="margin-top:12px"><b>'+(at?esc(at.nome):(REG.cat?esc(REG.cat):"Tutte le categorie"))+'</b>'+(at?'<div style="margin:6px 0 2px">'+catTags(at)+'</div>':"")+'<div class="mu">'+ses.length+' sessioni svolte'+(at?' · presente in '+base.length:'')+'</div></div>';
@@ -353,13 +372,18 @@ if(t.id=="retf"){RET=false;$("sheet").classList.remove("hide");$("fab").classLis
 if(t.id=="clbtn"){CL.open=!CL.open;return render()}
 if(d.cm){CL.mode=d.cm;return render()}
 if(t.id=="clpdf"){dlPdf();return}
-if(t.id=="bkdl"){BKM="";return bkSave()}
+if(t.id=="bkdl"){BKM="";BKE="";return bkSave()}
 if(t.id=="bkrep"){return bkApply(false)}
 if(t.id=="bkmrg"){return bkApply(true)}
-if(t.id=="bkcancel"){BK=null;return render()}
-if(t.dataset&&t.dataset.cbk){var cb=(CBK||[]).find(function(x){return x.id==t.dataset.cbk});if(cb){BKM="";BK={o:{date:cb.created_at.slice(0,10),data:cb.data}};render();try{scrollTo(0,0)}catch(e){}}return}
+if(t.id=="bkcancel"){BK=null;BKM="";BKE="";return render()}
+if(d.cbk){return bkRestore(d.cbk)}
+if(d.bkd){return bkDown(d.bkd)}
+if(d.bkx){return bkDel(d.bkx)}
+if(d.bkf){BKF=d.bkf;return render()}
+if(t.id=="bkmk"){return bkMake()}
+if(t.id=="bkrel"){CBK=null;return render()}
 if(d.v){view=d.v;return render()}
-if(d.rm){REG.mode=d.rm;GF=null;return render()}
+if(d.rm){if(d.rm=="bk"&&REG.mode!="bk")CBK=null;REG.mode=d.rm;GF=null;return render()}
 if(d.m){cur=new Date(cur.getFullYear(),cur.getMonth()+ +d.m,1);return render()}
 if(d.d){sel=d.d;return render()}
 if(d.e){var s=S.ses.find(function(x){return x.id==d.e});return openF(s)}
@@ -415,11 +439,14 @@ function cloudApply(d){S=Object.assign({ses:[],ath:[],rif:{},gare:[],crono:{}},d
 function cloudPull(first){return sbf("register_state?id=eq.1&select=version"+(first?",data":"")).then(function(r){var row=r[0];
 if(first){CREADY=true;if(!row||!row.data||!Array.isArray(row.data.ses)){cloudPush();return}CV=row.version;var L=S,d=row.data,add=0;["ses","ath","gare"].forEach(function(k){var have={};(d[k]=d[k]||[]).forEach(function(x){have[x.id]=1});(L[k]||[]).forEach(function(x){if(x&&!have[x.id]){d[k].push(x);add++}})});["rif","crono"].forEach(function(k){d[k]=d[k]||{};Object.keys(L[k]||{}).forEach(function(i){if(!d[k][i]){d[k][i]=L[k][i];add++}})});cloudApply(d);if(add)cloudPush();render();return}
 if(row&&row.version>CV&&!CPEND&&!editing()){return sbf("register_state?id=eq.1&select=version,data").then(function(r2){if(r2[0]&&!CPEND){CV=r2[0].version;cloudApply(r2[0].data);render()}})}}).catch(function(){if(first){CREADY=true;CSTAT="offline"}})}
-function cloudLoadBk(){sbf("register_backups?select=id,created_at,data&order=created_at.desc&limit=8").then(function(r){CBK=r;if($("main").innerHTML.indexOf("cbk-list")>=0)render()}).catch(function(){CBK=[]})}
-function cbkView(){if(CBK===null){cloudLoadBk();return '<div class="card"><b>🗓️ Backup automatici</b><div class="mu" id="cbk-list">Caricamento…</div></div>'}
-var h='<div class="card"><b>🗓️ Backup automatici</b><div class="mu" id="cbk-list" style="margin:4px 0 8px">Ogni domenica alle 21:00 viene salvata una copia di tutti i dati.</div>';
-if(!CBK.length)h+='<div class="mu">Nessun backup automatico ancora.</div>';
-CBK.forEach(function(b){var d=new Date(b.created_at);h+='<div class="row" style="justify-content:space-between;margin-top:6px"><span>'+d.toLocaleDateString("it-IT")+' '+d.toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})+' · '+((b.data&&b.data.ses)||[]).length+' sessioni</span><button type="button" class="sec" data-cbk="'+b.id+'">Ripristina</button></div>'});
+function cloudLoadBk(){CBK=[];CBK.loading=1;sbf("rpc/list_register_backups",{method:"POST",body:"{}"}).catch(function(){return sbf("register_backups?select=id,created_at,data&order=created_at.desc&limit=20").then(function(r){return r.map(function(b){return {id:b.id,created_at:b.created_at,kind:"auto",n_ses:((b.data&&b.data.ses)||[]).length,n_ath:((b.data&&b.data.ath)||[]).length}})})}).then(function(r){CBK=r||[];if(REG.mode=="bk")render()}).catch(function(){CBK=[];CBK.err=1;if(REG.mode=="bk")render()})}
+function cbkView(){if(CBK===null)cloudLoadBk();
+var h='<div class="card"><div class="row sp"><b>📚 Elenco backup</b><button type="button" class="sec" id="bkrel" style="padding:5px 10px;font-size:13px">↻ Aggiorna</button></div><div class="mu" style="margin:4px 0 6px">Backup automatico ogni domenica alle 21:00. Gli automatici restano 120 giorni, i manuali fino a 60 copie.</div><div>'+[["all","Tutti"],["manual","Manuali"],["auto","Automatici"],["pre_restore","Prima del ripristino"]].map(function(x){return '<button type="button" class="chip'+(BKF==x[0]?" on":"")+'" data-bkf="'+x[0]+'">'+x[1]+'</button>'}).join("")+'</div>';
+if(CBK.loading)return h+'<div class="mu" style="margin-top:8px">Caricamento…</div></div>';
+if(CBK.err)return h+'<div style="margin-top:8px;color:var(--dg)">Impossibile caricare l\'elenco. Controlla la connessione.</div></div>';
+var list=CBK.filter(function(b){return BKF=="all"||b.kind==BKF});
+if(!list.length)h+='<div class="mu" style="margin-top:8px">Nessun backup in questa categoria.</div>';
+list.forEach(function(b){var k=BKK[b.kind]||BKK.auto;h+='<div style="padding:9px 0;border-top:1px solid var(--bd);margin-top:6px"><div class="row sp" style="flex-wrap:wrap"><b>'+bkDate(b.created_at)+'</b><span class="tag'+(k[1]?" "+k[1]:"")+'">'+k[0]+'</span></div>'+(b.label?'<div style="margin-top:2px">'+esc(b.label)+'</div>':"")+'<div class="mu" style="font-size:13px;margin-top:2px">'+(b.n_ses||0)+' sessioni · '+(b.n_ath||0)+' atleti'+(b.size_kb!=null?' · '+(b.size_kb<1024?b.size_kb+" KB":(b.size_kb/1024).toFixed(1)+" MB"):"")+'</div><div class="row" style="margin-top:6px;flex-wrap:wrap"><button type="button" class="sec" data-bkd="'+b.id+'" style="padding:6px 10px;font-size:13px">⬇️ Scarica</button><button type="button" class="sec" data-cbk="'+b.id+'" style="padding:6px 10px;font-size:13px">♻️ Ripristina</button>'+(b.kind!="auto"?'<button type="button" class="sec dg" data-bkx="'+b.id+'" style="padding:6px 10px;font-size:13px">🗑️ Elimina</button>':"")+'</div></div>'});
 return h+'</div>'}
 setInterval(function(){if(CREADY)cloudPull(false)},10000);
 document.addEventListener("visibilitychange",function(){if(!document.hidden&&CREADY)cloudPull(false)});

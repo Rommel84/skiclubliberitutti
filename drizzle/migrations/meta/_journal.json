@@ -29,6 +29,13 @@
       "when": 1793291232764,
       "tag": "0003_enable_pg_cron",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793291292764,
+      "tag": "0004_manual_backups",
+      "breakpoints": true
     }
   ]
 }
