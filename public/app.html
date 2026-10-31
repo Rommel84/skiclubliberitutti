@@ -474,16 +474,16 @@ if(ds.cf){var fi=tg.files[0];if(!fi)return;sync();var fa=ds.cf,fk=ds.cfk;if(fi.s
 var ar=e.target.dataset&&e.target.dataset.ar;if(ar&&e.target.value){var a=S.ath.find(function(x){return x.id==ar});a.cat=e.target.value;save();return render()}var p=e.target.dataset&&e.target.dataset.p;if(p){sync();var i=F.presenti.indexOf(p);e.target.checked?(i<0&&F.presenti.push(p)):(i>=0&&F.presenti.splice(i,1));form()}});
 // ===== Sincronizzazione automatica condivisa =====
 var SB_URL="https://c--710b0fe8-ab30-4455-beb0-898edb182078-prod.lovable.cloud",SB_KEY="sb_publishable_0Rla_u3ap-kqBSB369xqaA_nyt708zN";
-var CV=0,CREADY=false,CPT=null,CPEND=false,CBK=null,CSTAT="",CBASE="",PUSHING=false,DIRTY=false,NOIF=false,RRQ=false;
+var CERR="",CV=0,CREADY=false,CPT=null,CPEND=false,CBK=null,CSTAT="",CBASE="",PUSHING=false,DIRTY=false,NOIF=false,RRQ=false;
 function sbf(path,opt){opt=opt||{};opt.headers=Object.assign({apikey:SB_KEY,"Content-Type":"application/json"},opt.headers||{});return fetch(SB_URL+"/rest/v1/"+path,opt).then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json()})}
-function setStat(){var e=$("syn");if(!e)return;e.textContent=CSTAT=="offline"?" · 🔴 Offline, salvo appena torna la rete":CPEND?" · 🟡 Salvataggio…":CREADY?" · 🟢 Sincronizzato":""}
+function setStat(){var e=$("syn");if(!e)return;e.textContent=CSTAT=="offline"?" · 🔴 Non sincronizzato"+(CERR?" ("+CERR+")":""):CPEND?" · 🟡 Salvataggio…":CREADY?" · 🟢 Sincronizzato":""}
 function cloudPush(){if(!CREADY)return;CPEND=true;setStat();clearTimeout(CPT);CPT=setTimeout(doPush,500)}
 function sendSave(sent){if(NOIF)return sbf("rpc/save_register",{method:"POST",body:'{"new_data":'+sent+'}'}).then(function(v){return {ok:true,version:v}});
 return sbf("rpc/save_register_if",{method:"POST",body:'{"new_data":'+sent+',"base_version":'+CV+'}'}).catch(function(e){if(String(e&&e.message).indexOf("404")>=0){NOIF=true;return sendSave(sent)}throw e})}
 function doPush(){if(PUSHING){DIRTY=true;return}PUSHING=true;DIRTY=false;var sent=JSON.stringify(S);
-sendSave(sent).then(function(res){if(!res||typeof res.ok!="boolean")throw new Error("risposta non valida");if(res.ok){PUSHING=false;CV=res.version;CBASE=sent;CSTAT="";rtNotify();if(DIRTY)return doPush();CPEND=false;setStat();return}
+sendSave(sent).then(function(res){if(!res||typeof res.ok!="boolean")throw new Error("risposta non valida");if(res.ok){PUSHING=false;CV=res.version;CBASE=sent;CSTAT="";CERR="";rtNotify();if(DIRTY)return doPush();CPEND=false;setStat();return}
 return sbf("register_state?id=eq.1&select=version,data").then(function(r){var row=r[0];PUSHING=false;if(!row)throw new Error("stato mancante");
-var base={};try{base=JSON.parse(CBASE||"{}")}catch(e){}cloudApply(merge3(base,S,row.data||{}));CV=row.version;CBASE=JSON.stringify(row.data||{});softRender();doPush()})}).catch(function(){PUSHING=false;CSTAT="offline";setStat();clearTimeout(CPT);CPT=setTimeout(doPush,5000)})}
+var base={};try{base=JSON.parse(CBASE||"{}")}catch(e){}cloudApply(merge3(base,S,row.data||{}));CV=row.version;CBASE=JSON.stringify(row.data||{});softRender();doPush()})}).catch(function(e){PUSHING=false;CSTAT="offline";CERR=String(e&&e.message||e||"rete").replace("Failed to fetch","rete assente")+(e&&/413/.test(e.message)?" dati troppo grandi":"");setStat();clearTimeout(CPT);CPT=setTimeout(doPush,5000)})}
 function jeq(a,b){return JSON.stringify(a)===JSON.stringify(b)}
 // Unione a tre vie: base = ultima versione condivisa, l = questo dispositivo, r = altro dispositivo. Per ogni elemento vince chi l'ha cambiato; se l'hanno cambiato entrambi vince questo dispositivo.
 function mergeMap(b,l,r,order){var out=[],seen={};function pick(k){var inB=k in b,inL=k in l,inR=k in r;
@@ -502,9 +502,9 @@ document.addEventListener("focusout",function(){setTimeout(function(){if(RRQ&&!e
 function editing(){var a=document.activeElement;return a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)&&a.type!="checkbox"}
 function cloudApply(d){S=Object.assign({ses:[],ath:[],rif:{},gare:[],crono:{}},d);try{localStorage.setItem("lt_v1",JSON.stringify(S))}catch(e){}try{seedAth();mig();mig2()}catch(e){}}
 var PULLING=false;
-function cloudPull(first){if(!first&&PULLING)return Promise.resolve();PULLING=true;return sbf("register_state?id=eq.1&select=version"+(first?",data":"")).then(function(r){var row=r[0];if(CSTAT=="offline"&&!CPEND)CSTAT="";
+function cloudPull(first){if(!first&&PULLING)return Promise.resolve();PULLING=true;return sbf("register_state?id=eq.1&select=version"+(first?",data":"")).then(function(r){var row=r[0];if(CSTAT=="offline"&&!CPEND){CSTAT="";CERR=""}
 if(first){CREADY=true;setStat();if(!row||!row.data||!Array.isArray(row.data.ses)){cloudPush();return}CV=row.version;CBASE=JSON.stringify(row.data);var L=S,d=row.data,add=0;["ses","ath","gare"].forEach(function(k){var have={};(d[k]=d[k]||[]).forEach(function(x){have[x.id]=1});(L[k]||[]).forEach(function(x){if(x&&!have[x.id]){d[k].push(x);add++}})});["rif","crono"].forEach(function(k){d[k]=d[k]||{};Object.keys(L[k]||{}).forEach(function(i){if(!d[k][i]){d[k][i]=L[k][i];add++}})});cloudApply(d);if(add)cloudPush();render();return}
-if(row&&row.version>CV){if(CPEND){if(!PUSHING){clearTimeout(CPT);doPush()}return}return sbf("register_state?id=eq.1&select=version,data").then(function(r2){if(r2[0]&&!CPEND&&r2[0].version>CV){CV=r2[0].version;CBASE=JSON.stringify(r2[0].data);cloudApply(r2[0].data);softRender()}})}}).catch(function(){if(first){CREADY=true;CSTAT="offline"}setStat()}).then(function(){PULLING=false;setStat()})}
+if(row&&row.version>CV){if(CPEND){if(!PUSHING){clearTimeout(CPT);doPush()}return}return sbf("register_state?id=eq.1&select=version,data").then(function(r2){if(r2[0]&&!CPEND&&r2[0].version>CV){CV=r2[0].version;CBASE=JSON.stringify(r2[0].data);cloudApply(r2[0].data);softRender()}})}}).catch(function(e){if(first){CREADY=true}CSTAT="offline";CERR="lettura: "+String(e&&e.message||"rete").replace("Failed to fetch","rete assente");setStat()}).then(function(){PULLING=false;setStat()})}
 // Tempo reale: avviso immediato quando un altro dispositivo salva.
 var RT=null,RTOK=false,RTN=0,RTHB=null,RTREF=0,RTB="realtime:lt-register-sync",RTP="realtime:lt-register-db";
 function rtSend(o){try{if(RT&&RT.readyState==1){o.ref=String(++RTREF);RT.send(JSON.stringify(o))}}catch(e){}}
