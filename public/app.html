@@ -86,6 +86,14 @@ input:focus,select:focus,textarea:focus{outline:0;border-color:var(--ac);box-sha
 details>summary{cursor:pointer;list-style:none}details>summary::before{content:"▸ ";color:var(--ac)}details[open]>summary::before{content:"▾ "}
 .sheet{background:linear-gradient(180deg,var(--bg),var(--bg))}
 .lg{display:flex;align-items:center;gap:6px;font-size:13px;padding:2px 0}.lg i{width:11px;height:11px;border-radius:3px;flex:none}.lg span:first-of-type{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hb{display:grid;grid-template-columns:minmax(0,40%) 1fr 34px;gap:8px;align-items:center;padding:5px 0;font-size:14px;cursor:default}.hb .hbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hb b{text-align:right;font-variant-numeric:tabular-nums}
+.hbt{height:12px;background:var(--ac2);border-radius:4px;overflow:hidden}.hbt i{display:block;height:100%;background:var(--ac);border-radius:0 4px 4px 0;min-width:2px}
+.vb{display:flex;align-items:flex-end;gap:2px;height:150px;margin-top:12px;border-bottom:1px solid var(--bd)}.vc{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;cursor:pointer}
+.vt{width:72%;max-width:30px;background:var(--ac2);border-radius:4px 4px 0 0;display:flex;align-items:flex-end;overflow:hidden}.vt.nb{background:transparent}.vt i{display:block;width:100%;background:var(--ac);border-radius:4px 4px 0 0;min-height:2px}
+.vv{font-size:11px;color:var(--mu);margin-bottom:3px;white-space:nowrap;font-variant-numeric:tabular-nums}.vx{display:flex;gap:2px;margin-top:4px}.vx span{flex:1;min-width:0;text-align:center;font-size:11px;color:var(--mu);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.vc.on .vt i,.hb.on .hbt i{background:var(--pr)}.tipl{min-height:18px;margin-top:6px;font-size:13px;color:var(--tx)}
+.kp{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.kp div{background:var(--ac2);border-radius:10px;padding:10px}.kp b{display:block;font-size:22px;line-height:1.1}.kp span{font-size:12px;color:var(--mu)}
+.lgk{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--mu);margin-right:12px}.lgk i{width:11px;height:11px;border-radius:3px;display:inline-block}
 header{display:flex;align-items:center;gap:14px}
 .logo{height:74px;width:auto;flex:none}
 .skull{height:58px;width:auto;margin-left:auto;flex:none;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5))}
@@ -270,7 +278,7 @@ if(a=="Gare")h+='<label class="l">Classifica (JPEG o PDF)</label>'+CF(a,"rfile",
 return h+'<label class="l">Note Allenatore / focus tecnico</label><textarea data-f="'+esc(a)+'" rows="2" placeholder="Note dell\'allenatore / focus tecnico">'+esc(d.focus||"")+'</textarea></div>'}).join("")}
 function card(s){var n=s.presenti.length,t=S.ath.filter(function(a){return inC(s.cat,a.cat)}).length;
 return '<div class="card" data-e="'+s.id+'"><div class="row sp"><b>'+esc(s.cat)+'</b><span class="tag '+(isProg(s)?"p":"")+'">'+(isProg(s)?"Programmata":"Svolta")+'</span></div><div>'+esc(lab(s)||"—")+'</div>'+(foc(s)?'<div class="mu">🎯 '+esc(foc(s))+'</div>':"")+(fl(s)?'<div class="mu">'+esc(fl(s))+'</div>':"")+'<div class="mu">'+fd(s.data)+(ll(s)?' · 📍 '+esc(ll(s)):"")+' · Presenti '+n+(t?"/"+t:"")+(cd(s)?' · '+esc(cd(s)):"")+'</div>'+(s.note?'<div class="mu">📝 '+esc(s.note)+'</div>':"")+'</div>'}
-var REG={mode:"list",cat:"",ath:""};
+var REG={mode:"list",cat:"",ath:"",per:"all"};
 var PAL=["#1e6b43","#6fc48f","#10241a","#a7cfb0","#4a5d50","#2f8f5b","#d3e3d0","#8a9b8e","#e8751a","#f3b17a"];
 function T(o,k){if(k)o[k]=(o[k]||0)+1}
 function pie(t,o){var k=Object.keys(o).filter(function(x){return o[x]>0}).sort(function(a,b){return o[b]-o[a]}),tot=k.reduce(function(a,x){return a+o[x]},0);if(!tot)return "";var C=2*Math.PI*40,off=0,svg='<svg viewBox="0 0 120 120" width="112" height="112" style="flex:none;color:var(--tx)"><g transform="rotate(-90 60 60)">',lg="";
@@ -280,9 +288,9 @@ return '<div class="card"><b>'+esc(t)+'</b><div class="row" style="align-items:f
 function catSel(req){return '<label class="l">Categoria</label><select data-rf="cat"><option value="">'+(req?"Seleziona categoria…":"Tutte le categorie")+'</option>'+cats().map(function(c){return '<option'+(REG.cat==c?" selected":"")+'>'+esc(c)+'</option>'}).join("")+'</select>'}
 function regCtl(){var M=REG.mode,h='<div style="margin-top:6px">'+[["list","📋 Elenco attività"],["ana","📊 Analisi"],["ath","👥 Atleti"],["gare","🏁 Calendario gare"],["bk","🛠️ Admin backup"]].map(function(x){return '<button type="button" class="chip'+(M==x[0]?" on":"")+'" data-rm="'+x[0]+'">'+x[1]+'</button>'}).join("")+'</div>'+(M=="ath"||M=="bk"?"":catSel(M=="gare"));
 if(M=="ana"&&REG.cat)h+='<label class="l">Atleta</label><select data-rf="ath"><option value="">Tutti gli atleti</option>'+S.ath.filter(function(a){return inC(REG.cat,a.cat)}).sort(function(a,b){return a.nome<b.nome?-1:1}).map(function(a){return '<option value="'+a.id+'"'+(REG.ath==a.id?" selected":"")+'>'+esc(a.nome)+(catsOf(a).length>1?' ('+catsOf(a).join(' · ')+')':'')+'</option>'}).join("")+'</select>';return h}
-function ana(){var td=iso(new Date()),ses=S.ses.filter(function(s){return s.data<=td&&(!REG.cat||sesIn(s.cat,REG.cat))}),at=REG.ath?S.ath.find(function(a){return a.id==REG.ath}):null,base=at?ses.filter(function(s){return s.presenti.indexOf(at.id)>=0}):ses;
+function ana(){var td=iso(new Date()),pf=REG.ath?perFrom():"",ses=S.ses.filter(function(s){return s.data<=td&&s.data>=pf&&(!REG.cat||sesIn(s.cat,REG.cat))}),at=REG.ath?S.ath.find(function(a){return a.id==REG.ath}):null,base=at?ses.filter(function(s){return s.presenti.indexOf(at.id)>=0}):ses;
 var h='<div class="card" style="margin-top:12px"><b>'+(at?esc(at.nome):(REG.cat?esc(REG.cat):"Tutte le categorie"))+'</b>'+(at?'<div style="margin:6px 0 2px">'+catTags(at)+'</div>':"")+'<div class="mu">'+ses.length+' sessioni svolte'+(at?' · presente in '+base.length:'')+'</div></div>';
-if(!ses.length)return h+'<div class="card mu">Nessuna sessione svolta da analizzare.</div>';
+if(!ses.length&&!at)return h+'<div class="card mu">Nessuna sessione svolta da analizzare.</div>';
 var A={},CT={},LC={},M={},N={},PD={},PI={},CR={},CL={},GT={},GL={},FP={},SE={},SL={},SP={},RF={},VD={},PR={};
 base.forEach(function(s){var d=s.det||{},o,c=(s.cond||"").split(" · ");
 s.tipo.forEach(function(a){if(ACT.indexOf(a)>=0)T(A,a)});T(CT,s.cat);T(LC,ll(s));
@@ -299,8 +307,35 @@ var tt="Presenze per categoria";
 if(at){tt="Presenze";PR={"Presente":base.length,"Assente":ses.length-base.length}}
 else if(REG.cat){tt="Presenti / assenti";var tot=S.ath.filter(function(a){return inC(REG.cat,a.cat)}).length,pt=0,ab=0;ses.forEach(function(s){var n=s.presenti.filter(function(id){return S.ath.some(function(a){return a.id==id&&inC(REG.cat,a.cat)})}).length;pt+=n;ab+=Math.max(0,tot-n)});PR={"Presenti":pt,"Assenti":ab}}
 else ses.forEach(function(s){PR[s.cat]=(PR[s.cat]||0)+s.presenti.length});
-if(at&&!base.length)h+='<div class="card mu">Questo atleta non risulta presente in nessuna sessione: restano solo le presenze.</div>';
+if(at)return athAna(at,ses,base,{A:A,PD:PD,LC:LC,M:M,N:N,CL:CL,SP:SP});
 return h+pie(tt,PR)+pie("Attività",A)+(REG.cat?"":pie("Sessioni per categoria",CT))+pie("Località",LC)+pie("Meteo",M)+pie("Neve",N)+pie("Pali · disciplina",PD)+pie("Pali · pista",PI)+pie("Pali · crono",CR)+pie("Campo libero · tipo di sci",CL)+pie("Gare · tipo",GT)+pie("Gare · località",GL)+pie("Fuori pista",FP)+pie("Snow park · elementi",SE)+pie("Snow park · livello",SL)+pie("Speciale",SP)+pie("Rifacimento sci",RF)+pie("Video",VD)}
+
+// ===== Analisi personalizzata atleta (grafici a barre) =====
+function perFrom(){var n=new Date();if(REG.per=="season"){var y=n.getFullYear()-(n.getMonth()<8?1:0);return y+"-09-01"}if(REG.per=="90"){n.setDate(n.getDate()-90);return iso(n)}return ""}
+function hbar(t,o,note){var k=Object.keys(o).filter(function(x){return x&&x!="null"&&x!="undefined"&&o[x]>0}).sort(function(a,b){return o[b]-o[a]});if(!k.length)return "";var mx=o[k[0]],tot=k.reduce(function(a,x){return a+o[x]},0);
+return '<div class="card"><b>'+esc(t)+'</b>'+(note?'<div class="mu" style="font-size:13px">'+esc(note)+'</div>':"")+'<div style="margin-top:6px">'+k.map(function(x){var p=Math.round(o[x]/tot*100);return '<div class="hb" data-tip="'+esc(x+": "+o[x]+" ("+p+"%)")+'" title="'+esc(x+": "+o[x]+" ("+p+"%)")+'"><span class="hbl">'+esc(x)+'</span><span class="hbt"><i style="width:'+(o[x]/mx*100).toFixed(1)+'%"></i></span><b>'+o[x]+'</b></div>'}).join("")+'</div><div class="tipl mu"></div></div>'}
+function vbar(t,it,o){o=o||{};if(!it.length)return "";var mx=it.reduce(function(m,x){return Math.max(m,x.tot!=null?x.tot:x.v)},0)||1,mn=o.min!=null?o.min:0,rg=(mx-mn)||1;
+var h='<div class="card"><b>'+esc(t)+'</b>'+(o.note?'<div class="mu" style="font-size:13px">'+esc(o.note)+'</div>':"")+(o.legend?'<div style="margin-top:6px">'+o.legend+'</div>':"")+'<div class="vb">';
+it.forEach(function(x){var top=x.tot!=null?x.tot:x.v,th=Math.max(2,(top-mn)/rg*100),fh=x.tot!=null?(x.tot?x.v/x.tot*100:0):100;h+='<div class="vc" data-tip="'+esc(x.tip)+'" title="'+esc(x.tip)+'"><span class="vv">'+esc(x.lab!=null?x.lab:String(x.v))+'</span><span class="vt'+(x.tot!=null?"":" nb")+'" style="height:'+th.toFixed(1)+'%"><i style="height:'+fh.toFixed(1)+'%"></i></span></div>'});
+return h+'</div><div class="vx">'+it.map(function(x){return '<span>'+esc(x.x)+'</span>'}).join("")+'</div><div class="tipl mu">'+(o.hint||"Tocca una barra per i dettagli.")+'</div></div>'}
+function crAth(at,pf){var out=[];Object.keys(S.crono||{}).forEach(function(k){var p=k.split("|"),d=p[0],c=p[1],cr=S.crono[k];if(!cr||!cr.a||d<pf)return;var q=cr.a[at.id];if(!q||!q.p)return;var v=(q.t||[]).map(pt).filter(function(x){return x>0});if(!v.length)return;var me=Math.min.apply(null,v),all=[];
+Object.keys(cr.a).forEach(function(id){var z=cr.a[id];if(!z||!z.p)return;var w=(z.t||[]).map(pt).filter(function(x){return x>0});if(w.length)all.push(Math.min.apply(null,w))});
+out.push({d:d,c:c,best:me,n:v.length,pos:all.filter(function(x){return x<me-1e-9}).length+1,of:all.length})});return out.sort(function(a,b){return a.d<b.d?-1:1})}
+function athAna(at,ses,base,X){var pf=perFrom(),obj=at.obj||[],ok=obj.filter(function(o){return o.ok}).length,cr=crAth(at,pf),bestC=cr.reduce(function(m,x){return !m||x.best<m.best?x:m},null),last=base.reduce(function(m,s){return s.data>m?s.data:m},"");
+var h='<div class="card" style="margin-top:12px"><div class="row sp"><b>📊 '+esc(at.nome)+'</b><button type="button" class="sec" data-gp="'+esc(at.id)+'" style="padding:5px 10px;font-size:13px">🎯 Scheda</button></div><div style="margin:6px 0 2px">'+catTags(at)+'</div><div>'+[["all","Tutto"],["season","Stagione in corso"],["90","Ultimi 90 giorni"]].map(function(x){return '<button type="button" class="chip'+(REG.per==x[0]?" on":"")+'" data-per="'+x[0]+'">'+x[1]+'</button>'}).join("")+'</div>';
+h+='<div class="kp"><div><b>'+(ses.length?Math.round(base.length/ses.length*100):0)+'%</b><span>Presenze: '+base.length+' su '+ses.length+' sessioni</span></div><div><b>'+(last?last.slice(8)+"/"+last.slice(5,7):"–")+'</b><span>Ultima presenza</span></div><div><b>'+(bestC?ft(bestC.best):"–")+'</b><span>'+(bestC?"Miglior tempo · "+bestC.d.slice(8)+"/"+bestC.d.slice(5,7):"Nessun tempo crono")+'</span></div><div><b>'+ok+'/'+obj.length+'</b><span>Obiettivi raggiunti</span></div></div></div>';
+if(!ses.length)return h+'<div class="card mu">Nessuna sessione della categoria in questo periodo.</div>';
+var mo={},mk=[];ses.forEach(function(s){var k=s.data.slice(0,7);if(!mo[k]){mo[k]={t:0,p:0};mk.push(k)}mo[k].t++;if(s.presenti.indexOf(at.id)>=0)mo[k].p++});mk.sort();mk=mk.slice(-12);
+h+=vbar("Presenze per mese",mk.map(function(k){var m=mo[k],nm=MESI[+k.slice(5)-1];return {x:nm.slice(0,3),v:m.p,tot:m.t,lab:m.p+"/"+m.t,tip:nm+" "+k.slice(0,4)+": presente "+m.p+" volte su "+m.t+" sessioni ("+Math.round(m.p/m.t*100)+"%)"}}),{legend:'<span class="lgk"><i style="background:var(--ac)"></i>Presenze</span><span class="lgk"><i style="background:var(--ac2)"></i>Sessioni della categoria</span>'});
+if(cr.length){var c12=cr.slice(-12),mn=Math.min.apply(null,c12.map(function(x){return x.best}));
+h+=vbar("Crono · miglior tempo per giornata",c12.map(function(x){return {x:x.d.slice(8)+"/"+x.d.slice(5,7),v:x.best,lab:x.pos+"°",tip:fd(x.d)+" · "+x.c+": miglior tempo "+ft(x.best)+" su "+x.n+" manche · "+x.pos+"° su "+x.of}}),{min:mn*0.9,note:"Barra più bassa = tempo migliore. Sopra ogni barra la posizione in classifica del giorno. I tempi dipendono dal tracciato: confrontali con cautela."})}
+h+=hbar("Attività svolte",X.A,"Numero di sessioni a cui ha partecipato per tipo di attività.")+hbar("Pali · discipline",X.PD)+hbar("Campo libero · tipo di sci",X.CL)+hbar("Speciale",X.SP)+hbar("Località",X.LC)+hbar("Meteo",X.M)+hbar("Neve",X.N);
+var pm={},pk=[];(at.prog||[]).forEach(function(x){if(!x.d||x.d<pf)return;var k=x.d.slice(0,7);if(!pm[k]){pm[k]=0;pk.push(k)}pm[k]++});pk.sort();pk=pk.slice(-12);
+if(pk.length)h+=vbar("Progressi annotati per mese",pk.map(function(k){var nm=MESI[+k.slice(5)-1];return {x:nm.slice(0,3),v:pm[k],tip:nm+" "+k.slice(0,4)+": "+pm[k]+" progressi annotati"}}));
+if(obj.length)h+='<div class="card"><b>Obiettivi</b><div class="hb" style="margin-top:6px"><span class="hbl">Raggiunti</span><span class="hbt"><i style="width:'+(ok/obj.length*100).toFixed(1)+'%"></i></span><b>'+Math.round(ok/obj.length*100)+'%</b></div>'+obj.map(function(o){return '<div class="mu" style="font-size:13px;padding:2px 0">'+(o.ok?"✅ ":"⬜ ")+esc(o.t)+'</div>'}).join("")+'</div>';
+if(!base.length)h+='<div class="card mu">Questo atleta non risulta presente in nessuna sessione del periodo.</div>';
+return h}
+document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-tip]");if(!b)return;var c=b.closest(".card");if(!c)return;c.querySelectorAll(".vc.on,.hb.on").forEach(function(x){x.classList.remove("on")});b.classList.add("on");var l=c.querySelector(".tipl");if(l){l.textContent=b.dataset.tip;l.classList.remove("mu")}});
 function regView(){var h=regCtl();if(REG.mode=="ana")return h+ana();if(REG.mode=="ath")return h;if(REG.mode=="bk"){if(!BKOK){setTimeout(function(){var j=$("bkpin");if(j)j.focus()},50);return h+bkLock()}return h+bkView()}if(REG.mode=="gare")return h+gareView();
 var l=S.ses.filter(function(s){return !REG.cat||sesIn(s.cat,REG.cat)}).sort(function(a,b){return (b.data+(b.ora||""))<(a.data+(a.ora||""))?-1:1});
 return h+(l.length?l.map(card).join(""):'<div class="card mu">Nessuna sessione.</div>')+'<div class="row" style="margin-top:10px"><button class="sec" id="exp">⬇️ Esporta tabelle (CSV)</button></div>'}
@@ -355,7 +390,7 @@ function gpOpen(id){if(!S.ath.some(function(x){return x.id==id}))return;var old=
 function gpClose(){var ov=$("gpov");if(ov)ov.remove()}
 function gpPaint(){var ov=$("gpov"),a=gpAth();if(!a)return gpClose();
 var obj=a.obj||[],pr=(a.prog||[]).slice().sort(function(x,y){return x.d<y.d?1:-1});
-var h='<div class="card"><div class="row sp"><b>🎯 '+esc(a.nome)+'</b><button class="sec" id="gpclose" style="padding:6px 10px">✕</button></div><div style="margin:6px 0 2px">'+catTags(a)+'</div><div class="mu">'+S.ses.filter(function(s){return s.presenti.indexOf(a.id)>=0}).length+' presenze registrate</div></div>';
+var h='<div class="card"><div class="row sp"><b>🎯 '+esc(a.nome)+'</b><button class="sec" id="gpclose" style="padding:6px 10px">✕</button></div><div style="margin:6px 0 2px">'+catTags(a)+'</div><div class="mu">'+S.ses.filter(function(s){return s.presenti.indexOf(a.id)>=0}).length+' presenze registrate</div><div style="margin-top:8px"><button type="button" class="sec" id="gpana">📊 Analisi personalizzata</button></div></div>';
 h+='<div class="card"><b>Obiettivi</b><div class="mu" style="margin:4px 0 2px">Inserisci gli obiettivi dell\'atleta; tocca ✓ per segnare quelli raggiunti.</div>';
 h+=obj.length?obj.map(function(o,i){return '<div class="row" style="padding:7px 0'+(i<obj.length-1?';border-bottom:1px solid var(--bd)':'')+'"><button class="sq'+(o.ok?" on":"")+'" data-gt="'+i+'" title="'+(o.ok?"Raggiunto: tocca per annullare":"Segna come raggiunto")+'">'+(o.ok?"✓":"")+'</button><span style="flex:1;min-width:0'+(o.ok?';text-decoration:line-through;color:var(--mu)':'')+'">'+esc(o.t)+'</span><button class="sec dg" data-gd="'+i+'" style="padding:5px 9px;font-size:13px">✕</button></div>'}).join(""):'<div class="mu" style="padding:6px 0">Nessun obiettivo inserito.</div>';
 h+='<label class="l">Nuovo obiettivo</label><textarea id="gpobj" rows="2" placeholder="es. migliorare la partenza, qualificarsi alle regionali\u2026"></textarea><div style="margin-top:8px"><button class="pri" id="gpaddobj">Aggiungi obiettivo</button></div></div>';
@@ -383,6 +418,8 @@ if(d.cbk){return bkRestore(d.cbk)}
 if(d.bkd){return bkDown(d.bkd)}
 if(d.bkx){return bkDel(d.bkx)}
 if(d.bkf){BKF=d.bkf;return render()}
+if(d.per){REG.per=d.per;return render()}
+if(t.id=="gpana"){var ga=gpAth();if(ga){gpClose();view="reg";REG.mode="ana";REG.cat=catsOf(ga)[0]||ga.cat;REG.ath=ga.id;render();try{scrollTo(0,0)}catch(e){}}return}
 if(t.id=="bkmk"){return bkMake()}
 if(t.id=="bkpinok"){return bkUnlock()}
 if(t.id=="bklock"){BKOK=false;BK=null;BKM="";BKE="";try{sessionStorage.removeItem("lt_bkok")}catch(e){}return render()}
@@ -444,8 +481,8 @@ function cloudPush(){if(!CREADY)return;CPEND=true;setStat();clearTimeout(CPT);CP
 function sendSave(sent){if(NOIF)return sbf("rpc/save_register",{method:"POST",body:'{"new_data":'+sent+'}'}).then(function(v){return {ok:true,version:v}});
 return sbf("rpc/save_register_if",{method:"POST",body:'{"new_data":'+sent+',"base_version":'+CV+'}'}).catch(function(e){if(String(e&&e.message).indexOf("404")>=0){NOIF=true;return sendSave(sent)}throw e})}
 function doPush(){if(PUSHING){DIRTY=true;return}PUSHING=true;DIRTY=false;var sent=JSON.stringify(S);
-sendSave(sent).then(function(res){if(res&&res.ok){PUSHING=false;CV=res.version;CBASE=sent;CSTAT="";rtNotify();if(DIRTY)return doPush();CPEND=false;setStat();return}
-return sbf("register_state?id=eq.1&select=version,data").then(function(r){var row=r[0];PUSHING=false;if(!row){CV=0;return doPush()}
+sendSave(sent).then(function(res){if(!res||typeof res.ok!="boolean")throw new Error("risposta non valida");if(res.ok){PUSHING=false;CV=res.version;CBASE=sent;CSTAT="";rtNotify();if(DIRTY)return doPush();CPEND=false;setStat();return}
+return sbf("register_state?id=eq.1&select=version,data").then(function(r){var row=r[0];PUSHING=false;if(!row)throw new Error("stato mancante");
 var base={};try{base=JSON.parse(CBASE||"{}")}catch(e){}cloudApply(merge3(base,S,row.data||{}));CV=row.version;CBASE=JSON.stringify(row.data||{});softRender();doPush()})}).catch(function(){PUSHING=false;CSTAT="offline";setStat();clearTimeout(CPT);CPT=setTimeout(doPush,5000)})}
 function jeq(a,b){return JSON.stringify(a)===JSON.stringify(b)}
 // Unione a tre vie: base = ultima versione condivisa, l = questo dispositivo, r = altro dispositivo. Per ogni elemento vince chi l'ha cambiato; se l'hanno cambiato entrambi vince questo dispositivo.
