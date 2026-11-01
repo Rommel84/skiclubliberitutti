@@ -126,6 +126,8 @@ var ACT=["Campo libero","Pali","Fuori pista","Snow park","Gare","Speciale","Tras
 var GR={"Pali":[["pista","Pista",["1","5","Stampa","Fisi 50","25bis","Stadium","24","23","Challier","Horres","Grancombe"],0]],"Fuori pista":[["opt","Tipo",["Neve fresca","Stradine/boschetti","Neve primaverile"],1]],"Snow park":[["elem","Elementi",["Salti","Box","Skicross"],1],["liv","Livello",["Base","Medio","Avanzato"],0]]};
 var RO=["Slalom","Gigante","Slalom gara","Gigante gara"];
 var SUB={"Speciale":["Tipo",["Telemark","Snowboard","Snowblade","Altro"]],"Campo libero":["Tipo di sci",["Gigante","Slalom"]],"Pali":["Disciplina",["Slalom","Gigante","Super G","Parallelo","Gran Gigante","Piedi Veloci","Flipper","Addestramento","Ginkana","Skicross"]],"Gare":["Località della gara",["Bardonecchia","Sestriere","Sauze d'Oulx","San Sicario","Clavière","Altro"]]};
+// "Sci da archi" è disponibile in Campo libero solo per la categoria Giovani
+var CL_EXTRA={"Giovani":["Sci da archi"]};function subOpts(a,c){var b=SUB[a]?SUB[a][1]:[];if(a=="Campo libero"&&CL_EXTRA[c])b=b.concat(CL_EXTRA[c]);return b}
 var TG=["Gigante","Slalom","Super G","Gran Gigante","Piedi Veloci","Flipper","Gimkana"];
 var LOC=["Colomion/Melezet","Jafferau","Via Lattea","Monginevro","Altro"];
 var METEO=["☀️ Sole","⛅ Nuvoloso","☁️ Coperto","🌫️ Nebbia","🌨️ Nevica","💨 Vento","🌧️ Pioggia"];
@@ -302,7 +304,7 @@ return h+'</div><div class="mu" style="font-size:12px">Tempi in secondi, es. 45.
 function mig(){if(!S.gare)S.gare=[];if(!S.crono)S.crono={};if(!S.rif)S.rif={};if(S.rifm)return;S.ses.forEach(function(s){var o=s.det&&s.det["Rifacimento sci"];if(o&&o.ra)Object.keys(o.ra).forEach(function(id){var q=S.rif[id]=S.rif[id]||{o:[],d:s.data};o.ra[id].forEach(function(x){if(q.o.indexOf(x)<0)q.o.push(x)});if(s.data>q.d)q.d=s.data});if(s.det)delete s.det["Rifacimento sci"];s.tipo=s.tipo.filter(function(a){return a!="Rifacimento sci"})});S.rifm=1;save()}
 function subs(f){return ACT.filter(function(a){return f.tipo.indexOf(a)>=0}).map(function(a){var d=f.det[a]||{};
 var h='<div class="card" style="border-left:4px solid var(--ac)"><b>'+esc(a)+'</b>';
-if(SUB[a])h+='<label class="l">'+SUB[a][0]+'</label><div>'+SUB[a][1].map(function(x){return '<button type="button" class="chip'+(d.sub==x?" on":"")+'" data-s="'+esc(a)+'" data-x="'+esc(x)+'">'+esc(x)+'</button>'}).join("")+'</div>'+OI(a,d);
+if(SUB[a])h+='<label class="l">'+SUB[a][0]+'</label><div>'+subOpts(a,f.cat).map(function(x){return '<button type="button" class="chip'+(d.sub==x?" on":"")+'" data-s="'+esc(a)+'" data-x="'+esc(x)+'">'+esc(x)+'</button>'}).join("")+'</div>'+OI(a,d);
 (GR[a]||[]).forEach(function(g){h+=chg(a,g[0],g[1],g[2],g[3],d)});
 if(a=="Gare")h+=GX(d);
 if(a=="Pali")h+='<label class="l">Numero di giri</label><input type="number" inputmode="numeric" data-pg="giri" value="'+esc(d.giri||"")+'"><label class="l">Numero di porte</label><input type="number" inputmode="numeric" data-pg="porte" value="'+esc(d.porte||"")+'">'+((d.sub||d.crono)?ck(a,"crono","Crono",d.crono)+(d.crono?CF(a,"cfile",d,"")+CRB(f):""):"");
@@ -534,7 +536,7 @@ document.addEventListener("input",function(e){var ds=e.target.dataset||{};if(ds.
 document.addEventListener("toggle",function(e){var t=e.target;if(t.dataset&&t.dataset.cat)OPEN[t.dataset.cat]=t.open},true);
 document.addEventListener("change",function(e){var tg=e.target,ds=tg.dataset||{};
 if(ds.bk){var bf=tg.files[0];if(!bf)return;BKM="";var br=new FileReader();br.onload=function(){try{var o=JSON.parse(br.result);if(!o||!o.data||!Array.isArray(o.data.ses)||!Array.isArray(o.data.ath))throw 0;BK={o:o}}catch(x){BK={err:"File non valido: non sembra un backup di questa app."}}render()};br.readAsText(bf);return}
-if(ds.fc){sync();F.cat=tg.value;F.err=false;F.presenti=[];if(tg.value){S.lastcat=tg.value;save()}return form()}
+if(ds.fc){sync();F.cat=tg.value;F.err=false;F.presenti=[];var cfd=F.det&&F.det["Campo libero"];if(cfd&&subOpts("Campo libero",F.cat).indexOf(cfd.sub)<0){cfd.sub="";cfd.subx=""};if(tg.value){S.lastcat=tg.value;save()}return form()}
 if(ds.cp){cq(ds.cp).p=tg.checked?1:0;save();return render()}
 if(ds.cd){CRS.date=tg.value||CRS.date;return render()}
 if(ds.rf){GF=null;REG[ds.rf]=tg.value;if(ds.rf=="cat")REG.ath="";return render()}
