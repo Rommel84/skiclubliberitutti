@@ -65,3 +65,56 @@ describe("Categorie in scheda atleta", () => {
       .forEach((a: any) => expect(text).toContain(a.nome));
   });
 });
+
+describe("Sci da archi in Campo libero (solo Giovani)", () => {
+  const w = loadApp();
+
+  function skiTypes(cat: string) {
+    w.openF(null);
+    w.F.cat = cat;
+    w.F.tipo = ["Campo libero"];
+    w.F.det = {};
+    w.form();
+    const sheet = document.getElementById("sheet")!;
+    return Array.from(sheet.querySelectorAll('[data-s="Campo libero"]')).map(
+      (b) => b.textContent!.trim(),
+    );
+  }
+
+  it("offers Sci da archi only for the Giovani category", () => {
+    expect(skiTypes("Giovani")).toEqual(["Gigante", "Slalom", "Sci da archi"]);
+    expect(skiTypes("Ragazzi Race")).toEqual(["Gigante", "Slalom"]);
+    expect(skiTypes("Children Race")).toEqual(["Gigante", "Slalom"]);
+    expect(skiTypes("")).toEqual(["Gigante", "Slalom"]);
+  });
+
+  it("leaves the other activities' option lists untouched", () => {
+    expect(w.subOpts("Speciale", "Giovani")).toEqual(["Telemark", "Snowboard", "Snowblade", "Altro"]);
+    expect(w.subOpts("Pali", "Giovani")).not.toContain("Sci da archi");
+  });
+
+  it("drops Sci da archi when the session is moved out of Giovani", () => {
+    w.openF(null);
+    w.F.cat = "Giovani";
+    w.F.tipo = ["Campo libero"];
+    w.F.det = { "Campo libero": { sub: "Sci da archi" } };
+    w.form();
+    const sel = document.querySelector('select[data-fc="1"]') as HTMLSelectElement;
+    sel.value = "Ragazzi Race";
+    sel.dispatchEvent(new Event("change", { bubbles: true }));
+    expect(w.F.det["Campo libero"].sub).toBe("");
+  });
+
+  it("keeps Sci da archi when the session stays in Giovani", () => {
+    w.openF(null);
+    w.F.cat = "Giovani";
+    w.F.tipo = ["Campo libero"];
+    w.F.det = { "Campo libero": { sub: "Sci da archi" } };
+    w.form();
+    const sel = document.querySelector('select[data-fc="1"]') as HTMLSelectElement;
+    sel.value = "Giovani";
+    sel.dispatchEvent(new Event("change", { bubbles: true }));
+    expect(w.F.det["Campo libero"].sub).toBe("Sci da archi");
+  });
+});
+
