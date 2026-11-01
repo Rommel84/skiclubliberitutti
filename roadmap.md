@@ -4,3 +4,5 @@
 - [x] Backup automatico domenica sera salvato nell'app.
 - [ ] Email del backup a skiclubliberitutti@gmail.com — in attesa della configurazione del dominio email.
 - [x] Caricamento di un backup (file o backup automatici) per ripristinare i dati.
+- [x] "Sci da archi" in Campo libero, solo per la categoria Giovani.
+
