@@ -170,7 +170,39 @@ function GX(d){return '<label class="l">Tipo di gara</label><div>'+TG.map(functi
 function OI(a,d){return d.sub=="Altro"?'<input data-so="'+esc(a)+'" placeholder="Scrivi qui" value="'+esc(d.subx||"")+'" style="margin-top:6px">':""}
 function chg(a,k,l,opts,multi,d){var v=d[k];return '<label class="l">'+l+'</label><div>'+opts.map(function(x){var on=multi?(v||[]).indexOf(x)>=0:v==x;return '<button type="button" class="chip'+(on?" on":"")+'" data-g="'+esc(a)+'" data-k="'+k+'"'+(multi?' data-mu="1"':"")+' data-x="'+esc(x)+'">'+esc(x)+'</button>'}).join("")+'</div>'}
 function ck(a,k,t,v){return '<label class="pres"><input type="checkbox" data-ck="'+k+'" data-a="'+a+'"'+(v?" checked":"")+'><span>'+t+'</span></label>'}
-function CF(a,k,d,acc){var c=d[k];return '<div class="mu" style="padding:2px 4px 8px">'+(c?'📎 '+esc(c.name)+' <button type="button" class="sec dg" data-cfr="'+esc(a)+'" data-cfk="'+k+'">✕</button>'+(/^image\//.test(c.type||"")?'<br><img src="'+c.data+'" style="max-width:100%;margin-top:6px;border-radius:8px">':""):'<input type="file" data-cf="'+esc(a)+'" data-cfk="'+k+'"'+(acc?' accept="'+acc+'"':"")+'>'+(F&&F.cerr==k+a?'<div style="color:var(--dg)">File troppo grande (max 1 MB)</div>':""))+'</div>'}
+function CF(a,k,d,acc){var c=d[k],key=k+a,st=(F&&F.cst&&F.cst[key])||null;
+if(st&&st.busy)return '<div class="mu" style="padding:2px 4px 8px">⏳ '+esc(st.busy)+'</div>';
+return '<div class="mu" style="padding:2px 4px 8px">'+(c?'📎 '+esc(c.name)+(c.data?' <span class="tag">'+fsz(dsz(c.data))+'</span>':"")+' <button type="button" class="sec" data-cfo="'+esc(a)+'" data-cfk="'+k+'" style="padding:5px 9px;font-size:13px">Apri</button> <button type="button" class="sec dg" data-cfr="'+esc(a)+'" data-cfk="'+k+'">✕</button>'+(st&&st.ok?'<div style="color:var(--ok);margin-top:4px">'+esc(st.ok)+'</div>':"")+(/^image\//.test(c.type||"")?'<br><img src="'+c.data+'" style="max-width:100%;margin-top:6px;border-radius:8px">':""):'<input type="file" data-cf="'+esc(a)+'" data-cfk="'+k+'"'+(acc?' accept="'+acc+'"':"")+'><div style="font-size:12px;margin-top:4px">Foto e PDF vengono ridotti in automatico per occupare poco spazio.</div>'+(st&&st.err?'<div style="color:var(--dg)">'+esc(st.err)+'</div>':""))+'</div>'}
+// ===== Compressione allegati =====
+var FT=240000;
+function dsz(u){var i=String(u||"").indexOf(",");return i<0?0:Math.floor((u.length-i-1)*3/4)}
+function fsz(b){return b<1024?b+" B":b<1048576?Math.round(b/1024)+" KB":(b/1048576).toFixed(1).replace(".",",")+" MB"}
+function jpgName(n){return String(n||"file").replace(/\.[^.]+$/,"")+".jpg"}
+function toJpeg(src,w,h,gray){var best=null,side=Math.max(w,h),max=Math.min(1600,side),q;
+for(var pass=0;pass<6;pass++){var k=Math.min(1,max/side),cw=Math.max(1,Math.round(w*k)),ch=Math.max(1,Math.round(h*k)),cv=document.createElement("canvas");cv.width=cw;cv.height=ch;var x=cv.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,cw,ch);x.imageSmoothingQuality="high";x.drawImage(src,0,0,cw,ch);
+if(gray){var id=x.getImageData(0,0,cw,ch),D=id.data;for(var i=0;i<D.length;i+=4){var g=D[i]*.299+D[i+1]*.587+D[i+2]*.114;D[i]=D[i+1]=D[i+2]=g}x.putImageData(id,0,0)}
+for(q=0.72;q>=0.42;q-=0.1){var u=cv.toDataURL("image/jpeg",q);if(!best||dsz(u)<dsz(best))best=u;if(dsz(u)<=FT)return best}
+max=Math.round(max*0.8);if(max<800)break}
+return best}
+function loadImage(url){return new Promise(function(res,rej){var im=new Image();im.onload=function(){res(im)};im.onerror=function(){rej(new Error("img"))};im.src=url})}
+var PDFJS=null;
+function pdfLib(){if(PDFJS)return PDFJS;var b="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/";PDFJS=import(b+"pdf.min.mjs").then(function(m){m.GlobalWorkerOptions.workerSrc=b+"pdf.worker.min.mjs";return m}).catch(function(e){PDFJS=null;throw e});return PDFJS}
+function pdfToJpeg(buf){return pdfLib().then(function(lib){return lib.getDocument({data:buf}).promise}).then(function(doc){var n=Math.min(doc.numPages,12),pages=[],chain=Promise.resolve();
+for(var i=1;i<=n;i++)(function(i){chain=chain.then(function(){return doc.getPage(i)}).then(function(pg){var v=pg.getViewport({scale:1}),sc=1400/v.width,vp=pg.getViewport({scale:sc}),cv=document.createElement("canvas");cv.width=Math.round(vp.width);cv.height=Math.round(vp.height);var x=cv.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,cv.width,cv.height);return pg.render({canvasContext:x,viewport:vp}).promise.then(function(){pages.push(cv)})})})(i);
+return chain.then(function(){var W=1400,Ht=pages.reduce(function(a,c){return a+c.height+8},0),k=Math.min(1,14000/Ht),cv=document.createElement("canvas");cv.width=Math.round(W*k);cv.height=Math.round(Ht*k);var x=cv.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,cv.width,cv.height);var y=0;pages.forEach(function(p){x.drawImage(p,0,y,p.width*k,p.height*k);y+=(p.height+8)*k});
+var save=FT;FT=Math.max(FT,90000*pages.length);var u=toJpeg(cv,cv.width,cv.height,true);FT=save;return {data:u,pages:doc.numPages}})})}
+function readAs(fi,how){return new Promise(function(res,rej){var r=new FileReader();r.onload=function(){res(r.result)};r.onerror=function(){rej(r.error)};r[how](fi)})}
+// Riduce un file (File o allegato salvato {name,type,data}) e restituisce {name,type,data,orig}
+function shrinkFile(fi,kind){var name=fi.name,type=fi.type||"",isImg=/^image\//.test(type)||/\.(jpe?g|png|gif|webp|bmp|heic|heif)$/i.test(name),isPdf=type=="application/pdf"||/\.pdf$/i.test(name),orig=fi.size!=null?fi.size:dsz(fi.data);
+var src=fi.data?Promise.resolve(fi.data):(isImg?readAs(fi,"readAsDataURL"):null);
+if(isImg)return src.then(loadImage).then(function(im){var u=toJpeg(im,im.naturalWidth,im.naturalHeight,kind=="rfile");if(!u)throw new Error("img");if(fi.data&&dsz(u)>=dsz(fi.data))return null;return {name:jpgName(name),type:"image/jpeg",data:u,orig:orig}});
+if(isPdf){var buf=fi.data?fetch(fi.data).then(function(r){return r.arrayBuffer()}):readAs(fi,"readAsArrayBuffer");
+return buf.then(function(b){if(orig<=FT&&!fi.data)return readAs(fi,"readAsDataURL").then(function(u){return {name:name,type:"application/pdf",data:u,orig:orig}});if(orig<=FT)return null;
+return pdfToJpeg(b).then(function(r){if(fi.data&&dsz(r.data)>=dsz(fi.data))return null;return {name:jpgName(name),type:"image/jpeg",data:r.data,orig:orig,pages:r.pages}},function(e){if(fi.data)return null;if(orig<=1000000)return readAs(fi,"readAsDataURL").then(function(u){return {name:name,type:"application/pdf",data:u,orig:orig}});throw new Error("pdf")})})}
+if(fi.data)return Promise.resolve(null);
+if(orig>1000000)return Promise.reject(new Error("big"));
+return readAs(fi,"readAsDataURL").then(function(u){return {name:name,type:type,data:u,orig:orig}})}
+function openAtt(c){if(!c||!c.data)return;fetch(c.data).then(function(r){return r.blob()}).then(function(b){var u=URL.createObjectURL(b),w=window.open(u,"_blank");if(!w){var a=document.createElement("a");a.href=u;a.download=c.name||"allegato";document.body.appendChild(a);a.click();a.remove()}setTimeout(function(){URL.revokeObjectURL(u)},60000)})}
 var RO_CAT={"Super Baby":["Gigante"],"Baby Pro":["Gigante"],"Cuccioli Pro":["Gigante"],"Baby Race":["Slalom","Gigante","Gigante gara"],"Ragazzi Pro":["Slalom","Gigante"],"Allievi Pro":["Slalom","Gigante"],"Giovani":["Slalom","Gigante","Sci da archi"]};
 function roFor(c){if(c=="Children Race")c="Ragazzi Race";return RO_CAT[c]||RO}
 function rifView(){if(!REG.cat)return '<div class="card mu" style="margin-top:12px">Seleziona una categoria per vedere gli atleti.</div>';
@@ -200,7 +232,7 @@ function bkView(){var dd=S.bkd?S.bkd.split("-").reverse().join("/"):"mai",h='';
 h+='<div class="card" style="margin-top:12px"><div class="row sp"><b>🛠️ Admin backup</b><button type="button" class="sec" id="bklock" style="padding:5px 10px;font-size:13px">🔒 Esci</button></div><div class="mu" style="margin-top:4px">Crea copie dei dati, scaricale sul dispositivo e ripristinale quando serve. I backup salvati qui sono condivisi tra tutti i dispositivi.</div>'+(BKM?'<div style="margin-top:8px;color:var(--ok)">'+esc(BKM)+'</div>':"")+(BKE?'<div style="margin-top:8px;color:var(--dg)">'+esc(BKE)+'</div>':"")+'</div>';
 if(BK&&BK.o){var o=BK.o.data;h+='<div class="card" style="border-color:var(--pr)"><b>♻️ Ripristino: backup del '+esc(BK.o.when||(BK.o.date||"").split("-").reverse().join("/"))+'</b><div class="mu" style="margin-top:4px">'+o.ses.length+' sessioni · '+o.ath.length+' atleti · '+(o.gare||[]).length+' gare · '+Object.keys(o.crono||{}).length+' giornate di crono</div><div class="row" style="margin-top:10px;flex-wrap:wrap"><button type="button" class="pri" id="bkrep"'+(BKBUSY?" disabled":"")+'>Sostituisci tutti i dati</button><button type="button" class="sec" id="bkmrg"'+(BKBUSY?" disabled":"")+'>Unisci ai dati attuali</button><button type="button" class="sec" id="bkcancel">Annulla</button></div><div class="mu" style="font-size:12px;margin-top:6px">Sostituisci cancella i dati di ora e mette quelli del backup. Unisci aggiunge solo quello che manca. Prima di procedere viene salvata in automatico una copia dei dati attuali ("Prima del ripristino").</div></div>'}
 h+='<div class="card"><b>➕ Nuovo backup manuale</b><div class="mu" style="margin:4px 0 6px">Salva adesso una copia di tutti i dati: sessioni, atleti, rifacimento sci, gare, crono e allegati.</div><label class="l">Nota (facoltativa)</label><input id="bknote" maxlength="80" placeholder="es. fine stagione, prima della pulizia atleti"><div class="row" style="margin-top:10px;flex-wrap:wrap"><button type="button" class="pri" id="bkmk"'+(BKBUSY?" disabled":"")+'>'+(BKBUSY?"Attendi…":"💾 Crea backup ora")+'</button><button type="button" class="sec" id="bkdl">⬇️ Scarica copia sul dispositivo</button></div><div class="mu" style="font-size:12px;margin-top:6px">Ultima copia scaricata su questo dispositivo: '+dd+'</div></div>';
-h+=cbkView()+qEditor();
+h+=cbkView()+attView()+qEditor();
 h+='<div class="card"><b>📂 Ripristina da file</b><div class="mu" style="margin:4px 0 8px">Carica un file di backup (.json) scaricato in precedenza.</div><input type="file" accept=".json,application/json" data-bk="1">';
 if(BK&&BK.err)h+='<div style="margin-top:8px;color:var(--dg)">'+esc(BK.err)+'</div>';
 return h+'</div>'}
@@ -275,8 +307,8 @@ if(SUB[a])h+='<label class="l">'+SUB[a][0]+'</label><div>'+SUB[a][1].map(functio
 if(a=="Gare")h+=GX(d);
 if(a=="Pali")h+='<label class="l">Numero di giri</label><input type="number" inputmode="numeric" data-pg="giri" value="'+esc(d.giri||"")+'"><label class="l">Numero di porte</label><input type="number" inputmode="numeric" data-pg="porte" value="'+esc(d.porte||"")+'">'+((d.sub||d.crono)?ck(a,"crono","Crono",d.crono)+(d.crono?CF(a,"cfile",d,"")+CRB(f):""):"");
 if(a=="Pali"||a=="Campo libero"||a=="Snow park"||a=="Gare")h+=ck(a,"video","Video",d.video);
-if(a=="Atletica")h+=ck(a,"test","Test",d.test)+(d.test?'<label class="l">Allegato test (JPEG o PDF)</label>'+CF(a,"tfile",d,"image/jpeg,application/pdf"):"");
-if(a=="Gare")h+='<label class="l">Classifica (JPEG o PDF)</label>'+CF(a,"rfile",d,"image/jpeg,application/pdf");
+if(a=="Atletica")h+=ck(a,"test","Test",d.test)+(d.test?'<label class="l">Allegato test (foto o PDF)</label>'+CF(a,"tfile",d,"image/*,application/pdf"):"");
+if(a=="Gare")h+='<label class="l">Classifica (foto o PDF)</label>'+CF(a,"rfile",d,"image/*,application/pdf");
 return h+'<label class="l">Note Allenatore / focus tecnico</label><textarea data-f="'+esc(a)+'" rows="2" placeholder="Note dell\'allenatore / focus tecnico">'+esc(d.focus||"")+'</textarea></div>'}).join("")}
 function card(s){var n=s.presenti.length,t=S.ath.filter(function(a){return inC(s.cat,a.cat)}).length;
 return '<div class="card" data-e="'+s.id+'"><div class="row sp"><b>'+esc(s.cat)+'</b><span class="tag '+(isProg(s)?"p":"")+'">'+(isProg(s)?"Programmata":"Svolta")+'</span></div><div>'+esc(lab(s)||"—")+'</div>'+(foc(s)?'<div class="mu">🎯 '+esc(foc(s))+'</div>':"")+(fl(s)?'<div class="mu">'+esc(fl(s))+'</div>':"")+'<div class="mu">'+fd(s.data)+(ll(s)?' · 📍 '+esc(ll(s)):"")+' · Presenti '+n+(t?"/"+t:"")+(cd(s)?' · '+esc(cd(s)):"")+'</div>'+(s.note?'<div class="mu">📝 '+esc(s.note)+'</div>':"")+'</div>'}
@@ -360,6 +392,18 @@ if(t.id=="qcancel"){QE=null;return render()}
 if(t.id=="qsave"){var q=qMut()[QE],nt=$("qet").value.trim();if(!q)return;if(!nt){$("qet").focus();return}q[0]=nt;q[1]=$("qea").value.trim();QE=null;return qDone("Frase modificata.")}
 if(d.qd!=null){var l=qMut(),i=+d.qd;if(!l[i]||!confirm("Eliminare questa frase?\n\n“"+l[i][0]+"”"))return;l.splice(i,1);QE=null;return qDone("Frase eliminata.")}
 if(t.id=="qreset"){if(!confirm("Ripristinare le "+QUOTES.length+" frasi originali? Le frasi aggiunte o modificate andranno perse."))return;S.quotes=null;QE=null;return qDone("Frasi originali ripristinate.")}});
+
+// ===== Riduzione allegati esistenti (Admin) =====
+var AT={busy:false,msg:""};
+function attList(){var l=[];S.ses.forEach(function(s){Object.keys(s.det||{}).forEach(function(a){var d=s.det[a];["cfile","rfile","tfile"].forEach(function(k){if(d&&d[k]&&d[k].data)l.push({s:s,d:d,k:k,c:d[k]})})})});return l}
+function attView(){var l=attList(),tot=l.reduce(function(a,x){return a+dsz(x.c.data)},0),big=l.filter(function(x){return dsz(x.c.data)>FT}).length,all=JSON.stringify(S).length;
+return '<div class="card"><b>🗜️ Spazio allegati</b><div class="mu" style="margin:4px 0 8px">'+l.length+' allegati per '+fsz(tot)+' (su '+fsz(all)+' di dati in totale). '+(big?big+' si possono ridurre.':'Sono già tutti ridotti.')+'</div>'+(AT.msg?'<div style="margin-bottom:8px;color:var(--ok)">'+esc(AT.msg)+'</div>':"")+'<button type="button" class="pri" id="attgo"'+(AT.busy||!big?" disabled":"")+'>'+(AT.busy?esc(AT.busy):"Riduci gli allegati")+'</button><div class="mu" style="font-size:12px;margin-top:6px">Foto ridimensionate a max 1600 px e ricompresse; PDF pesanti trasformati in immagine. Consiglio: crea prima un backup manuale.</div></div>'}
+function attGo(){if(AT.busy)return;var l=attList().filter(function(x){return dsz(x.c.data)>FT}),i=0,before=0,after=0,n=0;if(!l.length)return;
+function step(){if(i>=l.length){AT.busy=false;AT.msg=n?"Ridotti "+n+" allegati: da "+fsz(before)+" a "+fsz(after)+" (risparmiati "+fsz(before-after)+").":"Nessun allegato si poteva ridurre ulteriormente.";if(n)save();return render()}
+var x=l[i++];AT.busy="Riduco "+i+" di "+l.length+"…";render();
+shrinkFile(x.c,x.k).then(function(r){if(r&&dsz(r.data)<dsz(x.c.data)){before+=dsz(x.c.data);after+=dsz(r.data);n++;x.d[x.k]={name:r.name,type:r.type,data:r.data}}}).catch(function(){}).then(function(){setTimeout(step,30)})}
+step()}
+document.addEventListener("click",function(e){var t=e.target.closest&&e.target.closest("#attgo");if(t)attGo()});
 function regView(){var h=regCtl();if(REG.mode=="ana")return h+ana();if(REG.mode=="ath")return h;if(REG.mode=="bk"){if(!BKOK){setTimeout(function(){var j=$("bkpin");if(j)j.focus()},50);return h+bkLock()}return h+bkView()}if(REG.mode=="gare")return h+gareView();
 var l=S.ses.filter(function(s){return !REG.cat||sesIn(s.cat,REG.cat)}).sort(function(a,b){return (b.data+(b.ora||""))<(a.data+(a.ora||""))?-1:1});
 return h+(l.length?l.map(card).join(""):'<div class="card mu">Nessuna sessione.</div>')+'<div class="row" style="margin-top:10px"><button class="sec" id="exp">⬇️ Esporta tabelle (CSV)</button></div>'}
@@ -461,7 +505,8 @@ if(t.id=="gpaddprog")return gpAddProg();
 if(d.gt!=null)return gpTog(+d.gt);
 if(d.gd!=null)return gpDelObj(+d.gd);
 if(d.pd)return gpDelProg(d.pd);
-if(d.cfr){sync();delete F.det[d.cfr][d.cfk];F.cerr="";return form()}
+if(d.cfr){sync();delete F.det[d.cfr][d.cfk];if(F.cst)delete F.cst[d.cfk+d.cfr];return form()}
+if(d.cfo){var oc=F&&F.det[d.cfo]&&F.det[d.cfo][d.cfk];return openAtt(oc)}
 if(t.id=="cpall"){var l2=S.ath.filter(function(a){return inC(REG.cat,a.cat)}),al=l2.every(function(a){return cq(a.id).p});l2.forEach(function(a){cq(a.id).p=al?0:1});save();return render()}
 if(d.ra){var rr=S.rif[d.ra]=S.rif[d.ra]||{o:[]},ri=rr.o.indexOf(d.x);ri>=0?rr.o.splice(ri,1):rr.o.push(d.x);rr.d=iso(new Date());if(!rr.o.length)delete S.rif[d.ra];save();return render()}
 if(d.gc){gsync();GF[d.gc]=GF[d.gc]==d.x?"":d.x;return render()}
@@ -494,7 +539,8 @@ if(ds.cp){cq(ds.cp).p=tg.checked?1:0;save();return render()}
 if(ds.cd){CRS.date=tg.value||CRS.date;return render()}
 if(ds.rf){GF=null;REG[ds.rf]=tg.value;if(ds.rf=="cat")REG.ath="";return render()}
 if(ds.ck){sync();var a=ds.a;F.det[a]=F.det[a]||{};F.det[a][ds.ck]=tg.checked;return form()}
-if(ds.cf){var fi=tg.files[0];if(!fi)return;sync();var fa=ds.cf,fk=ds.cfk;if(fi.size>1000000){F.cerr=fk+fa;return form()}var rd=new FileReader();rd.onload=function(){F.det[fa]=F.det[fa]||{};F.det[fa][fk]={name:fi.name,type:fi.type,data:rd.result};F.cerr="";form()};rd.readAsDataURL(fi);return}
+if(ds.cf){var fi=tg.files[0];if(!fi)return;sync();var fa=ds.cf,fk=ds.cfk,key=fk+fa;F.cst=F.cst||{};if(fi.size>40000000){F.cst[key]={err:"File troppo grande (max 40 MB)."};return form()}F.cst[key]={busy:"Riduco il file ("+fsz(fi.size)+")…"};form();var ff=F;
+shrinkFile(fi,fk).then(function(r){if(F!==ff)return;F.det[fa]=F.det[fa]||{};F.det[fa][fk]={name:r.name,type:r.type,data:r.data};var sz=dsz(r.data);F.cst[key]={ok:r.type=="image/jpeg"&&/pdf$/i.test(fi.name)?"PDF trasformato in immagine"+(r.pages>1?" ("+r.pages+" pagine)":"")+": da "+fsz(r.orig)+" a "+fsz(sz)+".":sz<r.orig*0.95?"Ridotto da "+fsz(r.orig)+" a "+fsz(sz)+".":"File salvato ("+fsz(sz)+")."};form()}).catch(function(e){if(F!==ff)return;F.cst[key]={err:e&&e.message=="big"?"Questo tipo di file non si può ridurre: massimo 1 MB.":e&&e.message=="pdf"?"Non riesco a leggere il PDF senza connessione. Riprova online o carica una foto della classifica.":"File non leggibile. Prova con una foto (JPEG) o un PDF."};form()});return}
 var ar=e.target.dataset&&e.target.dataset.ar;if(ar&&e.target.value){var a=S.ath.find(function(x){return x.id==ar});a.cat=e.target.value;save();return render()}var p=e.target.dataset&&e.target.dataset.p;if(p){sync();var i=F.presenti.indexOf(p);e.target.checked?(i<0&&F.presenti.push(p)):(i>=0&&F.presenti.splice(i,1));form()}});
 // ===== Sincronizzazione automatica condivisa =====
 var SB_URL="https://c--710b0fe8-ab30-4455-beb0-898edb182078-prod.lovable.cloud",SB_KEY="sb_publishable_0Rla_u3ap-kqBSB369xqaA_nyt708zN";
