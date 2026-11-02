@@ -230,11 +230,33 @@ function bkUnlock(){var i=$("bkpin");if(!i)return;if(i.value.trim()==BKPIN){BKOK
 function bkPack(d,date){return {app:"liberi-tutti-registro",v:1,date:date||iso(new Date()),data:d||S}}
 function bkDate(x){var d=new Date(x);return d.toLocaleDateString("it-IT")+" "+d.toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})}
 var BKK={auto:["Automatico",""],manual:["Manuale","p"],pre_restore:["Prima del ripristino","p"]};
+
+// ===== Mio calendario (solo admin) =====
+var MYM=new Date(),MYD=iso(new Date()),MYA=["Riunione","Lezione","Sci club"];MYM.setDate(1);
+function myHrs(v){return (Math.round(v*100)/100).toString().replace(".",",")}
+function myView(){if(!S.my)S.my=[];var y=MYM.getFullYear(),m=MYM.getMonth(),pre=y+"-"+String(m+1).padStart(2,"0"),first=(new Date(y,m,1).getDay()+6)%7,dim=new Date(y,m+1,0).getDate();
+var ms=S.my.filter(function(x){return x.d.indexOf(pre)==0}),tot={},h='<div class="card" style="margin-top:12px"><b>🗓️ Il mio calendario</b><div class="mu" style="margin:4px 0 8px">Sessioni personali dell\'admin: riunioni, lezioni e sci club con le ore.</div>';
+h+='<div class="row sp"><button type="button" class="sec" data-mym="-1">‹</button><b>'+MYM.toLocaleDateString("it-IT",{month:"long",year:"numeric"})+'</b><button type="button" class="sec" data-mym="1">›</button></div>';
+h+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:8px;text-align:center;font-size:12px">'+["L","M","M","G","V","S","D"].map(function(x){return '<div class="mu">'+x+'</div>'}).join("");
+for(var i=0;i<first;i++)h+='<div></div>';
+for(var g=1;g<=dim;g++){var ds=pre+"-"+String(g).padStart(2,"0"),hh=ms.filter(function(x){return x.d==ds}).reduce(function(a,x){return a+(+x.h||0)},0);
+h+='<button type="button" data-myd="'+ds+'" style="padding:6px 0;border-radius:8px;border:1px solid '+(ds==MYD?'var(--pr)':'transparent')+';background:'+(hh?'var(--pr)':'transparent')+';color:'+(hh?'#fff':'inherit')+';font-size:13px">'+g+(hh?'<div style="font-size:10px">'+myHrs(hh)+'h</div>':'')+'</button>'}
+h+='</div>';
+h+='<label class="l">Data</label><input id="myd" type="date" value="'+MYD+'"><label class="l">Attività</label><select id="mya" onchange="document.getElementById(\'mycw\').style.display=this.value==\'Sci club\'?\'\':\'none\'">'+MYA.map(function(a){return '<option>'+a+'</option>'}).join("")+'</select>';
+h+='<div id="mycw" style="display:none"><label class="l">Categoria</label><select id="myc">'+cats().map(function(c){return '<option>'+esc(c)+'</option>'}).join("")+'</select></div>';
+h+='<label class="l">Ore</label><input id="myh" type="number" inputmode="decimal" min="0" step="0.5" placeholder="es. 1,5"><label class="l">Nota (facoltativa)</label><input id="myn" maxlength="120"><div style="margin-top:10px"><button type="button" class="pri" id="myadd">Aggiungi</button></div>';
+var dl=S.my.filter(function(x){return x.d==MYD});
+h+='<div style="margin-top:12px"><b>'+MYD.split("-").reverse().join("/")+'</b>'+(dl.length?dl.map(function(x){return '<div class="row sp" style="border-top:1px solid var(--ln,#ddd);padding:6px 0"><div>'+esc(x.a)+(x.cat?' · '+esc(x.cat):'')+' — <b>'+myHrs(+x.h)+' h</b>'+(x.n?'<div class="mu" style="font-size:12px">'+esc(x.n)+'</div>':'')+'</div><button type="button" class="sec" data-myx="'+x.id+'" style="padding:3px 8px">✕</button></div>'}).join(""):'<div class="mu">Nessuna attività.</div>')+'</div>';
+ms.forEach(function(x){var k=x.a+(x.cat?" · "+x.cat:"");tot[k]=(tot[k]||0)+(+x.h||0)});var tk=Object.keys(tot).sort(),all=tk.reduce(function(a,k){return a+tot[k]},0);
+h+='<div style="margin-top:12px"><b>Ore del mese: '+myHrs(all)+' h</b>'+tk.map(function(k){return '<div class="row sp" style="font-size:14px"><span>'+esc(k)+'</span><b>'+myHrs(tot[k])+' h</b></div>'}).join("")+'</div>';
+return h+'</div>'}
+function myAdd(){var d=$("myd").value,a=$("mya").value,hv=parseFloat(String($("myh").value).replace(",","."));if(!d||!(hv>0)){alert("Inserisci data e ore.");return}
+if(!S.my)S.my=[];S.my.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),d:d,a:a,cat:a=="Sci club"?$("myc").value:"",h:hv,n:$("myn").value.trim()});MYD=d;var p=d.split("-");MYM=new Date(+p[0],+p[1]-1,1);save();render()}
 function bkView(){var dd=S.bkd?S.bkd.split("-").reverse().join("/"):"mai",h='';
 h+='<div class="card" style="margin-top:12px"><div class="row sp"><b>🛠️ Admin backup</b><button type="button" class="sec" id="bklock" style="padding:5px 10px;font-size:13px">🔒 Esci</button></div><div class="mu" style="margin-top:4px">Crea copie dei dati, scaricale sul dispositivo e ripristinale quando serve. I backup salvati qui sono condivisi tra tutti i dispositivi.</div>'+(BKM?'<div style="margin-top:8px;color:var(--ok)">'+esc(BKM)+'</div>':"")+(BKE?'<div style="margin-top:8px;color:var(--dg)">'+esc(BKE)+'</div>':"")+'</div>';
 if(BK&&BK.o){var o=BK.o.data;h+='<div class="card" style="border-color:var(--pr)"><b>♻️ Ripristino: backup del '+esc(BK.o.when||(BK.o.date||"").split("-").reverse().join("/"))+'</b><div class="mu" style="margin-top:4px">'+o.ses.length+' sessioni · '+o.ath.length+' atleti · '+(o.gare||[]).length+' gare · '+Object.keys(o.crono||{}).length+' giornate di crono</div><div class="row" style="margin-top:10px;flex-wrap:wrap"><button type="button" class="pri" id="bkrep"'+(BKBUSY?" disabled":"")+'>Sostituisci tutti i dati</button><button type="button" class="sec" id="bkmrg"'+(BKBUSY?" disabled":"")+'>Unisci ai dati attuali</button><button type="button" class="sec" id="bkcancel">Annulla</button></div><div class="mu" style="font-size:12px;margin-top:6px">Sostituisci cancella i dati di ora e mette quelli del backup. Unisci aggiunge solo quello che manca. Prima di procedere viene salvata in automatico una copia dei dati attuali ("Prima del ripristino").</div></div>'}
 h+='<div class="card"><b>➕ Nuovo backup manuale</b><div class="mu" style="margin:4px 0 6px">Salva adesso una copia di tutti i dati: sessioni, atleti, rifacimento sci, gare, crono e allegati.</div><label class="l">Nota (facoltativa)</label><input id="bknote" maxlength="80" placeholder="es. fine stagione, prima della pulizia atleti"><div class="row" style="margin-top:10px;flex-wrap:wrap"><button type="button" class="pri" id="bkmk"'+(BKBUSY?" disabled":"")+'>'+(BKBUSY?"Attendi…":"💾 Crea backup ora")+'</button><button type="button" class="sec" id="bkdl">⬇️ Scarica copia sul dispositivo</button></div><div class="mu" style="font-size:12px;margin-top:6px">Ultima copia scaricata su questo dispositivo: '+dd+'</div></div>';
-h+=cbkView()+attView()+qEditor();
+h+=myView()+cbkView()+attView()+qEditor();
 h+='<div class="card"><b>📂 Ripristina da file</b><div class="mu" style="margin:4px 0 8px">Carica un file di backup (.json) scaricato in precedenza.</div><input type="file" accept=".json,application/json" data-bk="1">';
 if(BK&&BK.err)h+='<div style="margin-top:8px;color:var(--dg)">'+esc(BK.err)+'</div>';
 return h+'</div>'}
@@ -490,6 +512,10 @@ if(d.bkx){return bkDel(d.bkx)}
 if(d.bkf){BKF=d.bkf;return render()}
 if(d.per){REG.per=d.per;return render()}
 if(t.id=="gpana"){var ga=gpAth();if(ga){gpClose();view="reg";REG.mode="ana";REG.cat=catsOf(ga)[0]||ga.cat;REG.ath=ga.id;render();try{scrollTo(0,0)}catch(e){}}return}
+if(t.id=="myadd"){return myAdd()}
+if(d.mym){MYM=new Date(MYM.getFullYear(),MYM.getMonth()+(+d.mym),1);return render()}
+if(d.myd){MYD=d.myd;return render()}
+if(d.myx){S.my=(S.my||[]).filter(function(x){return x.id!=d.myx});save();return render()}
 if(t.id=="bkmk"){return bkMake()}
 if(t.id=="bkpinok"){return bkUnlock()}
 if(t.id=="bklock"){BKOK=false;BK=null;BKM="";BKE="";try{sessionStorage.removeItem("lt_bkok")}catch(e){}return render()}
