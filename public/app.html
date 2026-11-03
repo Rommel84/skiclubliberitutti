@@ -233,7 +233,29 @@ var BKK={auto:["Automatico",""],manual:["Manuale","p"],pre_restore:["Prima del r
 
 // ===== Mio calendario (solo admin) =====
 var MYM=new Date(),MYD=iso(new Date()),MYA=["Riunione","Lezione","Sci club"];MYM.setDate(1);
+var MYF="tutto";
 function myHrs(v){return (Math.round(v*100)/100).toString().replace(".",",")}
+function myIn(){var a=(S.my||[]).slice();if(MYF=="tutto")return a;
+if(MYF=="mese"){var pre=MYM.getFullYear()+"-"+String(MYM.getMonth()+1).padStart(2,"0");return a.filter(function(x){return x.d.indexOf(pre)==0})}
+var y=String(MYM.getFullYear());return a.filter(function(x){return x.d.indexOf(y)==0})}
+function myBars(t,o,note){var k=Object.keys(o).filter(function(x){return o[x]>0}).sort(function(a,b){return o[b]-o[a]});
+if(!k.length)return "";var mx=o[k[0]],tt=k.reduce(function(a,x){return a+o[x]},0);
+return '<div style="margin-top:12px"><b>'+esc(t)+'</b>'+(note?'<div class="mu" style="font-size:13px">'+esc(note)+'</div>':"")+'<div style="margin-top:6px">'+k.map(function(x){var p=Math.round(o[x]/tt*100);return '<div class="hb" style="grid-template-columns:minmax(0,38%) 1fr 52px" title="'+esc(x+": "+myHrs(o[x])+" h ("+p+"%)")+'"><span class="hbl">'+esc(x)+'</span><span class="hbt"><i style="width:'+(o[x]/mx*100).toFixed(1)+'%"></i></span><b>'+myHrs(o[x])+' h</b></div>'}).join("")+'</div></div>'}
+function myAna(){var all=(S.my||[]).slice();
+if(!all.length)return '<div class="card" style="margin-top:12px"><b>📊 Analisi ore</b><div class="mu" style="margin-top:4px">Ancora nessuna attività segnata: quando ne aggiungi una, qui trovi il riepilogo delle ore per tipologia.</div></div>';
+var h='<div class="card" style="margin-top:12px"><b>📊 Analisi ore</b><div class="mu" style="margin:4px 0 8px">Ore fatte, suddivise per tipologia di attività.</div>';
+h+='<div>'+[["mese","Mese"],["anno","Anno"],["tutto","Tutto"]].map(function(p){return '<button type="button" class="chip'+(MYF==p[0]?" on":"")+'" data-myf="'+p[0]+'">'+p[1]+'</button>'}).join("")+'</div>';
+var cur=myIn();
+if(!cur.length)return h+'<div class="mu" style="margin-top:8px">Nessuna attività in questo periodo: prova un altro periodo.</div></div>';
+var tot=0,days={},act={},cat={},mon={};
+cur.forEach(function(x){var v=+x.h||0;tot+=v;days[x.d]=1;act[x.a]=(act[x.a]||0)+v;if(x.cat)cat[x.cat]=(cat[x.cat]||0)+v;var k=x.d.slice(0,7);mon[k]=(mon[k]||0)+v});
+var nd=Object.keys(days).length;
+h+='<div class="row" style="flex-wrap:wrap;margin-top:10px"><span class="tag">'+myHrs(tot)+' h totali</span><span class="tag p">'+cur.length+' attività</span><span class="tag">'+nd+(nd==1?" giorno":" giorni")+' attivi</span><span class="tag">'+myHrs(tot/nd)+' h per giorno</span></div>';
+h+=myBars("Ore per attività",act,"Ripartizione delle ore tra i tipi di attività del periodo.");
+h+=myBars("Ore per categoria",cat,"Solo le attività di sci club con categoria.");
+var mk=Object.keys(mon).sort().slice(-12);
+if(mk.length>1)h+=vbar("Andamento mensile",mk.map(function(k){var p=k.split("-"),d=new Date(+p[0],+p[1]-1,1);return {v:mon[k],lab:myHrs(mon[k]),x:d.toLocaleDateString("it-IT",{month:"short"}).replace(".",""),tip:d.toLocaleDateString("it-IT",{month:"long",year:"numeric"})+": "+myHrs(mon[k])+" h"}}),{note:"Ore registrate in ogni mese.",hint:"Tocca una barra per il mese."});
+return h+'</div>'}
 function myView(){if(!S.my)S.my=[];var y=MYM.getFullYear(),m=MYM.getMonth(),pre=y+"-"+String(m+1).padStart(2,"0"),first=(new Date(y,m,1).getDay()+6)%7,dim=new Date(y,m+1,0).getDate();
 var ms=S.my.filter(function(x){return x.d.indexOf(pre)==0}),tot={},h='<div class="card" style="margin-top:12px"><b>🗓️ Il mio calendario</b><div class="mu" style="margin:4px 0 8px">Sessioni personali dell\'admin: riunioni, lezioni e sci club con le ore.</div>';
 h+='<div class="row sp"><button type="button" class="sec" data-mym="-1">‹</button><b>'+MYM.toLocaleDateString("it-IT",{month:"long",year:"numeric"})+'</b><button type="button" class="sec" data-mym="1">›</button></div>';
@@ -249,7 +271,7 @@ var dl=S.my.filter(function(x){return x.d==MYD});
 h+='<div style="margin-top:12px"><b>'+MYD.split("-").reverse().join("/")+'</b>'+(dl.length?dl.map(function(x){return '<div class="row sp" style="border-top:1px solid var(--ln,#ddd);padding:6px 0"><div>'+esc(x.a)+(x.cat?' · '+esc(x.cat):'')+' — <b>'+myHrs(+x.h)+' h</b>'+(x.n?'<div class="mu" style="font-size:12px">'+esc(x.n)+'</div>':'')+'</div><button type="button" class="sec" data-myx="'+x.id+'" style="padding:3px 8px">✕</button></div>'}).join(""):'<div class="mu">Nessuna attività.</div>')+'</div>';
 ms.forEach(function(x){var k=x.a+(x.cat?" · "+x.cat:"");tot[k]=(tot[k]||0)+(+x.h||0)});var tk=Object.keys(tot).sort(),all=tk.reduce(function(a,k){return a+tot[k]},0);
 h+='<div style="margin-top:12px"><b>Ore del mese: '+myHrs(all)+' h</b>'+tk.map(function(k){return '<div class="row sp" style="font-size:14px"><span>'+esc(k)+'</span><b>'+myHrs(tot[k])+' h</b></div>'}).join("")+'</div>';
-return h+'</div>'}
+return h+'</div>'+myAna()}
 function myAdd(){var d=$("myd").value,a=$("mya").value,hv=parseFloat(String($("myh").value).replace(",","."));if(!d||!(hv>0)){alert("Inserisci data e ore.");return}
 if(!S.my)S.my=[];S.my.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),d:d,a:a,cat:a=="Sci club"?$("myc").value:"",h:hv,n:$("myn").value.trim()});MYD=d;var p=d.split("-");MYM=new Date(+p[0],+p[1]-1,1);save();render()}
 function bkView(){var dd=S.bkd?S.bkd.split("-").reverse().join("/"):"mai",h='';
@@ -515,6 +537,7 @@ if(t.id=="gpana"){var ga=gpAth();if(ga){gpClose();view="reg";REG.mode="ana";REG.
 if(t.id=="myadd"){return myAdd()}
 if(d.mym){MYM=new Date(MYM.getFullYear(),MYM.getMonth()+(+d.mym),1);return render()}
 if(d.myd){MYD=d.myd;return render()}
+if(d.myf){MYF=d.myf;return render()}
 if(d.myx){S.my=(S.my||[]).filter(function(x){return x.id!=d.myx});save();return render()}
 if(t.id=="bkmk"){return bkMake()}
 if(t.id=="bkpinok"){return bkUnlock()}
