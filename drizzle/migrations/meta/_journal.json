@@ -43,6 +43,13 @@
       "when": 1793291352764,
       "tag": "0005_realtime_sync",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793703332612,
+      "tag": "0006_apply_manual_backups_and_sync",
+      "breakpoints": true
     }
   ]
 }
