@@ -6,4 +6,5 @@
 - [x] Caricamento di un backup (file o backup automatici) per ripristinare i dati.
 - [x] "Sci da archi" in Campo libero, solo per la categoria Giovani.
 - [x] Analisi ore nel calendario personale: suddivisione per tipologia, categoria, periodo.
+- [x] Eserciziario nel Registro (Tracciati / Campo libero), tutto modificabile.
 

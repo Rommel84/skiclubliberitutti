@@ -366,7 +366,7 @@ k.forEach(function(x,i){var len=o[x]/tot*C,c=PAL[i%PAL.length];svg+='<circle cx=
 svg+='</g><text x="60" y="65" text-anchor="middle" font-size="17" font-weight="700" fill="currentColor">'+tot+'</text></svg>';
 return '<div class="card"><b>'+esc(t)+'</b><div class="row" style="align-items:flex-start;margin-top:8px;gap:12px">'+svg+'<div style="flex:1;min-width:0">'+lg+'</div></div></div>'}
 function catSel(req){return '<label class="l">Categoria</label><select data-rf="cat"><option value="">'+(req?"Seleziona categoria…":"Tutte le categorie")+'</option>'+cats().map(function(c){return '<option'+(REG.cat==c?" selected":"")+'>'+esc(c)+'</option>'}).join("")+'</select>'}
-function regCtl(){var M=REG.mode,h='<div style="margin-top:6px">'+[["list","📋 Elenco attività"],["ana","📊 Analisi"],["ath","👥 Atleti"],["gare","🏁 Calendario gare"],["bk","🛠️ Admin backup"]].map(function(x){return '<button type="button" class="chip'+(M==x[0]?" on":"")+'" data-rm="'+x[0]+'">'+x[1]+'</button>'}).join("")+'</div>'+(M=="ath"||M=="bk"?"":catSel(M=="gare"));
+function regCtl(){var M=REG.mode,h='<div style="margin-top:6px">'+[["list","📋 Elenco attività"],["ana","📊 Analisi"],["ath","👥 Atleti"],["gare","🏁 Calendario gare"],["ese","📘 Eserciziario"],["bk","🛠️ Admin backup"]].map(function(x){return '<button type="button" class="chip'+(M==x[0]?" on":"")+'" data-rm="'+x[0]+'">'+x[1]+'</button>'}).join("")+'</div>'+(M=="ath"||M=="bk"||M=="ese"?"":catSel(M=="gare"));
 if(M=="ana"&&REG.cat)h+='<label class="l">Atleta</label><select data-rf="ath"><option value="">Tutti gli atleti</option>'+S.ath.filter(function(a){return inC(REG.cat,a.cat)}).sort(function(a,b){return a.nome<b.nome?-1:1}).map(function(a){return '<option value="'+a.id+'"'+(REG.ath==a.id?" selected":"")+'>'+esc(a.nome)+(catsOf(a).length>1?' ('+catsOf(a).join(' · ')+')':'')+'</option>'}).join("")+'</select>';return h}
 function ana(){var td=iso(new Date()),pf=REG.ath?perFrom():"",ses=S.ses.filter(function(s){return s.data<=td&&s.data>=pf&&(!REG.cat||sesIn(s.cat,REG.cat))}),at=REG.ath?S.ath.find(function(a){return a.id==REG.ath}):null,base=at?ses.filter(function(s){return s.presenti.indexOf(at.id)>=0}):ses;
 var h='<div class="card" style="margin-top:12px"><b>'+(at?esc(at.nome):(REG.cat?esc(REG.cat):"Tutte le categorie"))+'</b>'+(at?'<div style="margin:6px 0 2px">'+catTags(at)+'</div>':"")+'<div class="mu">'+ses.length+' sessioni svolte'+(at?' · presente in '+base.length:'')+'</div>'+(function(){var fu=S.ses.filter(function(x){return x.data>td&&(!REG.cat||sesIn(x.cat,REG.cat))}).length;return fu?'<div class="mu" style="font-size:13px;margin-top:4px">🟠 '+fu+' session'+(fu==1?'e programmata':'i programmate')+' (date future) non '+(fu==1?'è inclusa':'sono incluse')+': entrano nelle analisi dal giorno in cui si svolgono.</div>':''})()+'</div>';
@@ -450,7 +450,15 @@ var x=l[i++];AT.busy="Riduco "+i+" di "+l.length+"…";render();
 shrinkFile(x.c,x.k).then(function(r){if(r&&dsz(r.data)<dsz(x.c.data)){before+=dsz(x.c.data);after+=dsz(r.data);n++;x.d[x.k]={name:r.name,type:r.type,data:r.data}}}).catch(function(){}).then(function(){setTimeout(step,30)})}
 step()}
 document.addEventListener("click",function(e){var t=e.target.closest&&e.target.closest("#attgo");if(t)attGo()});
-function regView(){var h=regCtl();if(REG.mode=="ana")return h+ana();if(REG.mode=="ath")return h;if(REG.mode=="bk"){if(!BKOK){setTimeout(function(){var j=$("bkpin");if(j)j.focus()},50);return h+bkLock()}return h+bkView()}if(REG.mode=="gare")return h+gareView();
+var ESO="",ESEG=["Tracciati","Campo libero"];
+function eseView(){if(!S.ese)S.ese=[];var h="";ESEG.forEach(function(g,gi){var l=S.ese.filter(function(x){return x.g==g}).sort(function(p,q){return (p.nome||"").localeCompare(q.nome||"")});
+h+='<div class="card"><b style="font-size:17px">'+(gi?"🏔️ ":"🚩 ")+g+'</b> <span class="mu">('+l.length+')</span>';
+l.forEach(function(x){var o=ESO==x.id;h+='<div style="border-top:1px solid var(--bd);padding:8px 0"><button type="button" class="sec" data-eo="'+x.id+'" style="width:100%;text-align:left">'+(o?"▾ ":"▸ ")+esc(x.nome||"(senza nome)")+((x.cats||[]).length?' <span class="mu" style="font-size:12px">· '+esc(x.cats.join(", "))+'</span>':"")+'</button>';
+if(o){h+='<label class="l">Nome esercizio</label><input data-ef="nome" data-eid="'+x.id+'" value="'+esc(x.nome)+'"><label class="l">Obiettivo tecnico</label><textarea data-ef="obj" data-eid="'+x.id+'" rows="2">'+esc(x.obj)+'</textarea><label class="l">Categorie</label><div>'+cats().map(function(c){return '<button type="button" class="chip'+((x.cats||[]).indexOf(c)>=0?" on":"")+'" data-ec="'+esc(c)+'" data-eid="'+x.id+'">'+esc(c)+'</button>'}).join("")+'</div><label class="l">Descrizione</label><textarea data-ef="desc" data-eid="'+x.id+'" rows="4">'+esc(x.desc)+'</textarea><div class="row sp" style="margin-top:8px"><select data-ef="g" data-eid="'+x.id+'">'+ESEG.map(function(z){return '<option'+(z==x.g?" selected":"")+'>'+z+'</option>'}).join("")+'</select><button type="button" class="sec" data-ex="'+x.id+'" style="color:var(--dg)">Elimina</button></div>'}
+h+='</div>'});
+h+='<div class="row" style="margin-top:8px;gap:6px"><input id="esn'+gi+'" placeholder="Nome nuovo esercizio"><button type="button" class="pri" data-ea="'+gi+'">Aggiungi</button></div></div>'});return h}
+function eseGet(id){return (S.ese||[]).filter(function(x){return x.id==id})[0]}
+function regView(){var h=regCtl();if(REG.mode=="ana")return h+ana();if(REG.mode=="ath")return h;if(REG.mode=="bk"){if(!BKOK){setTimeout(function(){var j=$("bkpin");if(j)j.focus()},50);return h+bkLock()}return h+bkView()}if(REG.mode=="ese")return h+eseView();if(REG.mode=="gare")return h+gareView();
 var l=S.ses.filter(function(s){return !REG.cat||sesIn(s.cat,REG.cat)}).sort(function(a,b){return (b.data+(b.ora||""))<(a.data+(a.ora||""))?-1:1});
 return h+(l.length?l.map(card).join(""):'<div class="card mu">Nessuna sessione.</div>')+'<div class="row" style="margin-top:10px"><button class="sec" id="exp">⬇️ Esporta tabelle (CSV)</button></div>'}
 function render(){nav();var h=NOTE?'<div class="card" style="color:var(--dg)">'+NOTE+'</div>':"";NOTE="";
@@ -538,6 +546,10 @@ if(t.id=="myadd"){return myAdd()}
 if(d.mym){MYM=new Date(MYM.getFullYear(),MYM.getMonth()+(+d.mym),1);return render()}
 if(d.myd){MYD=d.myd;return render()}
 if(d.myf){MYF=d.myf;return render()}
+if(d.eo){ESO=ESO==d.eo?"":d.eo;return render()}
+if(d.ea!=null){var en=$("esn"+d.ea),nm=en?en.value.trim():"";if(!nm){if(en)en.focus();return}if(!S.ese)S.ese=[];var ne={id:uid(),g:ESEG[+d.ea],nome:nm,obj:"",cats:[],desc:""};S.ese.push(ne);ESO=ne.id;save();return render()}
+if(d.ec&&d.eid){var ee=eseGet(d.eid);if(ee){ee.cats=ee.cats||[];var ci=ee.cats.indexOf(d.ec);if(ci>=0)ee.cats.splice(ci,1);else ee.cats.push(d.ec);save()}return render()}
+if(d.ex){if(!confirm("Eliminare questo esercizio?"))return;S.ese=(S.ese||[]).filter(function(x){return x.id!=d.ex});save();return render()}
 if(d.myx){S.my=(S.my||[]).filter(function(x){return x.id!=d.myx});save();return render()}
 if(t.id=="bkmk"){return bkMake()}
 if(t.id=="bkpinok"){return bkUnlock()}
@@ -583,7 +595,7 @@ $("main").innerHTML='<div class="card"><b>Allenamenti</b><textarea rows="6">'+es
 document.addEventListener("keydown",function(e){if(e.key=="Enter"&&e.target&&e.target.id=="bkpin"){e.preventDefault();bkUnlock()}});
 document.addEventListener("input",function(e){var ds=e.target.dataset||{};if(ds.ci){cq(ds.ci).t[+ds.cj]=e.target.value;save()}});
 document.addEventListener("toggle",function(e){var t=e.target;if(t.dataset&&t.dataset.cat)OPEN[t.dataset.cat]=t.open},true);
-document.addEventListener("change",function(e){var tg=e.target,ds=tg.dataset||{};
+document.addEventListener("change",function(e){var tg=e.target,ds=tg.dataset||{};if(ds.ef&&ds.eid){var ee=eseGet(ds.eid);if(ee){ee[ds.ef]=tg.value;save();if(ds.ef=="g"||ds.ef=="nome")render()}return}
 if(ds.bk){var bf=tg.files[0];if(!bf)return;BKM="";var br=new FileReader();br.onload=function(){try{var o=JSON.parse(br.result);if(!o||!o.data||!Array.isArray(o.data.ses)||!Array.isArray(o.data.ath))throw 0;BK={o:o}}catch(x){BK={err:"File non valido: non sembra un backup di questa app."}}render()};br.readAsText(bf);return}
 if(ds.fc){sync();F.cat=tg.value;F.err=false;F.presenti=[];var cfd=F.det&&F.det["Campo libero"];if(cfd&&subOpts("Campo libero",F.cat).indexOf(cfd.sub)<0){cfd.sub="";cfd.subx=""};if(tg.value){S.lastcat=tg.value;save()}return form()}
 if(ds.cp){cq(ds.cp).p=tg.checked?1:0;save();return render()}
