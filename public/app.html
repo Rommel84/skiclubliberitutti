@@ -70,6 +70,7 @@ button.pri:active{transform:translateY(3px);box-shadow:0 1px 0 var(--acl)}
 :root[data-theme="dark"] button.pri,:root[data-theme="dark"] .chip.on,:root[data-theme="dark"] .sq.on{color:#06140c}
 button.sec{border-radius:12px;background:linear-gradient(180deg,var(--card),var(--ac2));box-shadow:0 2px 0 var(--bd),0 3px 8px var(--sh);font-weight:600}
 button.sec:active{box-shadow:0 0 0 var(--bd)}
+button.sec.booked{background:var(--prbg);border-color:var(--pr);color:var(--pr)}
 button.dg{color:var(--dg)}
 .fab{background:linear-gradient(180deg,var(--ach),var(--acl));border-radius:30px;padding:16px 22px;font-weight:700;box-shadow:0 5px 0 var(--acl),0 12px 24px var(--sh)}
 .fab:active{transform:translateY(4px);box-shadow:0 1px 0 var(--acl)}
@@ -472,7 +473,7 @@ function vanDay(x,d){return x.start<d+"T23:59:59"&&x.end>d+"T00:00"}
 function vanList(d){return (S.vans||[]).filter(function(x){return (!VV||String(x.van)==VV)&&vanDay(x,d)}).sort(function(a,b){return a.start.localeCompare(b.start)})}
 function vanTime(v){return new Date(v).toLocaleString("it-IT",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})}
 function vanView(){var y=VM.getFullYear(),m=VM.getMonth(),first=(new Date(y,m,1).getDay()+6)%7,dim=new Date(y,m+1,0).getDate();
-var h='<h2 class="van-heading">🚐 Pulmini</h2><div class="van-filters">'+[""].concat(VAN_NUMBERS).map(function(n){return '<button type="button" class="sec'+(String(n)==VV?' on':'')+'" aria-pressed="'+(String(n)==VV)+'" data-vfilter="'+n+'">'+(n||"Tutti")+'</button>'}).join("")+'</div><div class="van-toolbar"><button type="button" class="sec" data-vmonth="-1" aria-label="Mese precedente">‹</button><b>'+MESI[m]+' '+y+'</b><button type="button" class="sec" data-vmonth="1" aria-label="Mese successivo">›</button></div><div class="cal van-calendar">'+["L","M","M","G","V","S","D"].map(function(d){return '<div class="h">'+d+'</div>'}).join("");
+var h='<h2 class="van-heading">🚐 Pulmini</h2><div class="van-filters">'+[""].concat(VAN_NUMBERS).map(function(n){return '<button type="button" class="sec'+(String(n)==VV?' on':'')+(n&&(S.vans||[]).some(function(x){return x.van==n&&vanDay(x,VD)})?' booked':'')+'" aria-pressed="'+(String(n)==VV)+'" data-vfilter="'+n+'">'+(n||"Tutti")+'</button>'}).join("")+'</div><div class="van-toolbar"><button type="button" class="sec" data-vmonth="-1" aria-label="Mese precedente">‹</button><b>'+MESI[m]+' '+y+'</b><button type="button" class="sec" data-vmonth="1" aria-label="Mese successivo">›</button></div><div class="cal van-calendar">'+["L","M","M","G","V","S","D"].map(function(d){return '<div class="h">'+d+'</div>'}).join("");
 for(var i=0;i<first;i++)h+='<div></div>';
 for(var day=1;day<=dim;day++){var d=iso(new Date(y,m,day)),list=vanList(d);h+='<button type="button" class="d'+(VD==d?' sel':'')+(d==iso(new Date())?' oggi':'')+'" data-vday="'+d+'" aria-label="'+d+(list.length?', '+list.length+' prenotazioni':'')+'">'+day+'<span class="van-count">'+(list.length?'🚐 '+list.length:'')+'</span></button>'}
 h+='</div><h3>'+fd(VD)+'</h3>';var l=vanList(VD);
