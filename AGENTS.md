@@ -13,3 +13,4 @@
 - The register opens directly without authentication or a cloud bridge; keep existing cloud account records and permissions untouched because public access applies only to the locally persisted register.
 - Register data is shared via the single-row `register_state` table: app.html writes through the `save_register` RPC (debounced) and polls version every 10s — keeps all devices in sync without accounts.
 - Weekly backups are snapshots in `register_backups` created by a pg_cron job (Sunday 20:00 UTC) — restorable from the app's backup screen.
+- Van reservations and coach choices are ID-keyed arrays in shared register state and participate in initial reconciliation, three-way merging and backup restoration so device changes retain individual records.

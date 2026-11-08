@@ -7,4 +7,6 @@
 - [x] "Sci da archi" in Campo libero, solo per la categoria Giovani.
 - [x] Analisi ore nel calendario personale: suddivisione per tipologia, categoria, periodo.
 - [x] Eserciziario nel Registro (Tracciati / Campo libero), tutto modificabile.
+- [x] Pulmini tra Calendario e Registro: calendario, prenotazioni, categorie e ritiro/rientro.
+- [ ] Inserire l'elenco definitivo degli allenatori — in attesa della lista dell'utente.
 
