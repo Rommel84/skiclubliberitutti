@@ -19,8 +19,20 @@ beforeEach(() => {
 });
 
 function booking(overrides = {}) {
-  return { id: 'booking-1', van: 1, coach: 'Allenatore di prova', cats: ['Children Race', 'Giovani'], start: '2026-11-08T08:00', end: '2026-11-09T18:00', ...overrides };
+  return { id: 'booking-1', van: 1, coach: 'Gibi', cats: ['Children Race', 'Giovani'], start: '2026-11-08T08:00', end: '2026-11-09T18:00', ...overrides };
 }
+
+it('offers all twenty supplied drivers even without previously saved coaches', () => {
+  expect(app.vanCoachNames()).toEqual(['Gibi', 'Lollo', 'Francy', 'Giulio', 'Cicco', 'Roberta', 'Tommy', 'Loca', 'Ceci', 'Giorgia', 'Gonty', 'Max', 'Monica', 'Pole', 'Loris', 'Fabio', 'Fede', 'Toio', 'Pux', 'Rommel']);
+});
+
+it('retains existing drivers while avoiding duplicate supplied names', () => {
+  app.S.vanCoaches = [{ id: 'old', name: 'Vecchio allenatore' }, { id: 'gibi', name: 'Gibi' }];
+  const names = app.vanCoachNames('Conducente precedente');
+  expect(names.filter((n: string) => n === 'Gibi')).toHaveLength(1);
+  expect(names).toContain('Vecchio allenatore');
+  expect(names).toContain('Conducente precedente');
+});
 
 it('accepts only pulmini 1, 2, 3, 4 and 5', () => {
   expect(app.VAN_NUMBERS).toEqual([1, 2, 3, 4, 5]);
@@ -61,7 +73,7 @@ it('saves, edits and packs all reservation details for backup', () => {
   app.vanOpen();
   app.VF.cats = ['Children Race', 'Giovani'];
   (document.getElementById('van-number') as HTMLSelectElement).value = '5';
-  (document.getElementById('van-coach') as HTMLInputElement).value = 'Allenatore di prova';
+  (document.getElementById('van-coach') as HTMLSelectElement).value = 'Gibi';
   (document.getElementById('van-start') as HTMLInputElement).value = '2026-11-08T08:00';
   (document.getElementById('van-end') as HTMLInputElement).value = '2026-11-09T18:00';
   expect(app.vanSave()).toBe(true);
