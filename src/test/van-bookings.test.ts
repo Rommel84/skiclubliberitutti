@@ -82,3 +82,34 @@ it('merges separate simultaneous bookings and coach names without dropping eithe
   expect(merged.vans.map((b: any) => b.id).sort()).toEqual(['booking-1', 'booking-2']);
   expect(merged.vanCoaches.map((b: any) => b.id).sort()).toEqual(['coach-1', 'coach-2']);
 });
+
+it('names the five pulmini exactly as the coach listed them', () => {
+  expect(app.VANS.map((v: any) => v.name)).toEqual(['Verde Ford', 'Verdone Talento', 'Giallo Pole', 'Blu Automatico', 'Arancione Giulio']);
+  expect(app.vanName(3)).toBe('Pulmino 3 · Giallo Pole');
+  expect(new Set(app.VANS.map((v: any) => v.c)).size).toBe(5);
+});
+
+it('greys the icon of an occupied pulmino and keeps the number in its own colour', () => {
+  app.VD = '2026-11-08';
+  app.S.vans = [booking({ van: 3 })];
+  const wrap = document.createElement('div');
+  wrap.innerHTML = app.vanView();
+  const pills = [...wrap.querySelectorAll('.van-pill')] as HTMLElement[];
+  const pill = (n: number) => pills.find((p) => p.querySelector('.vnum')?.textContent == String(n))!;
+  expect(pill(3).querySelector('.vico')!.className).toContain('off');
+  expect(pill(1).querySelector('.vico')!.className).not.toContain('off');
+  expect(pill(3).getAttribute('style')).toContain('--vc:' + app.VANS[2].c);
+  expect(pill(1).getAttribute('style')).toContain('--vc:' + app.VANS[0].c);
+});
+
+it('shows the pulmino name on the reservation card and in the form', () => {
+  app.VD = '2026-11-08';
+  app.S.vans = [booking({ van: 5 })];
+  const wrap = document.createElement('div');
+  wrap.innerHTML = app.vanView();
+  expect(wrap.querySelector('.van-booking b')!.textContent).toBe('Pulmino 5 · Arancione Giulio');
+  app.vanOpen('booking-1');
+  const options = [...document.querySelectorAll('#van-number option')].map((o) => o.textContent);
+  expect(options).toContain('Pulmino 5 · Arancione Giulio');
+  app.vanClose();
+});

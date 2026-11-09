@@ -10,3 +10,4 @@
 - [x] Pulmini tra Calendario e Registro: calendario, prenotazioni, categorie e ritiro/rientro.
 - [ ] Inserire l'elenco definitivo degli allenatori — in attesa della lista dell'utente.
 
+- [x] Pulmini rinominati (1 Verde Ford, 2 Verdone Talento, 3 Giallo Pole, 4 Blu Automatico, 5 Arancione Giulio) con numero del colore del pulmino e icona grigia quando è prenotato.
