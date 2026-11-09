@@ -26,6 +26,17 @@ it('offers all twenty supplied drivers even without previously saved coaches', (
   expect(app.vanCoachNames()).toEqual(['Gibi', 'Lollo', 'Francy', 'Giulio', 'Cicco', 'Roberta', 'Tommy', 'Loca', 'Ceci', 'Giorgia', 'Gonty', 'Max', 'Monica', 'Pole', 'Loris', 'Fabio', 'Fede', 'Toio', 'Pux', 'Rommel']);
 });
 
+it('keeps Marco and Fra out of the driver list, even when previously saved', () => {
+  app.S.vanCoaches = [{ id: 'm', name: 'Marco' }, { id: 'f', name: 'Fra' }, { id: 'g', name: 'Giulio' }];
+  const names = app.vanCoachNames();
+  expect(names).not.toContain('Marco');
+  expect(names).not.toContain('Fra');
+  expect(names).toContain('Giulio');
+  expect(names).toContain('Francy');
+  app.mig();
+  expect(app.S.vanCoaches.map((c: any) => c.name)).toEqual(['Giulio']);
+});
+
 it('retains existing drivers while avoiding duplicate supplied names', () => {
   app.S.vanCoaches = [{ id: 'old', name: 'Vecchio allenatore' }, { id: 'gibi', name: 'Gibi' }];
   const names = app.vanCoachNames('Conducente precedente');

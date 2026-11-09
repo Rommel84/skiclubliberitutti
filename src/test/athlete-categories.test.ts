@@ -66,6 +66,28 @@ describe("Categorie in scheda atleta", () => {
   });
 });
 
+describe("Categorie Scuola e Zoom", () => {
+  const w = loadApp();
+
+  it("adds Scuola and Zoom to the category list", () => {
+    const list = w.cats();
+    expect(list).toContain("Scuola");
+    expect(list).toContain("Zoom");
+    expect(list.slice(-2)).toEqual(["Scuola", "Zoom"]);
+    expect(list.filter((c: string) => c === "Scuola" || c === "Zoom")).toHaveLength(2);
+  });
+
+  it("offers Scuola and Zoom in the new session form", () => {
+    w.openF(null);
+    w.form();
+    const options = Array.from(
+      document.querySelectorAll('#sheet select[data-fc="1"] option'),
+    ).map((o) => o.textContent);
+    expect(options).toContain("Scuola");
+    expect(options).toContain("Zoom");
+  });
+});
+
 describe("Sci da archi in Campo libero (solo Giovani)", () => {
   const w = loadApp();
 
