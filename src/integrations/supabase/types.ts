@@ -121,6 +121,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      coach_pin_ok: { Args: { pin: string }; Returns: boolean }
+      decide_coach_pin: {
+        Args: { decision: string; pin: string; target_id: string }
+        Returns: undefined
+      }
       decide_coach_request: {
         Args: { decision: string; target_id: string }
         Returns: undefined
@@ -147,6 +152,16 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      is_coach_approved: { Args: never; Returns: boolean }
+      list_coach_requests: {
+        Args: { pin: string }
+        Returns: {
+          email: string
+          id: string
+          requested_at: string
+          status: string
+        }[]
       }
       list_register_backups: {
         Args: never

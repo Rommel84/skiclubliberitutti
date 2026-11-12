@@ -57,6 +57,13 @@
       "when": 1794479422296,
       "tag": "0007_register_reads_via_functions",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794480669666,
+      "tag": "0008_register_requires_approved_coach",
+      "breakpoints": true
     }
   ]
 }
