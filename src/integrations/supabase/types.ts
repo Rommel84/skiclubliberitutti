@@ -126,6 +126,21 @@ export type Database = {
         Returns: undefined
       }
       delete_manual_backup: { Args: { backup_id: string }; Returns: boolean }
+      get_register_backup: {
+        Args: { backup_id: string }
+        Returns: {
+          created_at: string
+          data: Json
+          id: string
+        }[]
+      }
+      get_register_state: {
+        Args: { with_data?: boolean }
+        Returns: {
+          data: Json
+          version: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
