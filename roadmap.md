@@ -13,3 +13,4 @@
 - [x] Pulmini rinominati (1 Verde Ford, 2 Verdone Talento, 3 Giallo Pole, 4 Blu Automatico, 5 Arancione Giulio) con numero del colore del pulmino e icona grigia quando è prenotato.
 - [x] Categorie "Scuola" e "Zoom" aggiunte all'elenco.
 - [x] "Marco" e "Fra" eliminati dall'elenco allenatori.
+- [x] Login rimesso: email + password comune, approvazione in Admin backup.
